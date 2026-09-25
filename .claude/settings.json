@@ -1,10 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(del \"d:\\\\user-files\\\\Desktop\\\\rubas-hennah\\\\app\\\\_lib\\\\productContent.ts\")"
+      "Bash(del \"d:\\\\user-files\\\\Desktop\\\\rubas-hennah\\\\app\\\\_lib\\\\productContent.ts\")",
+      "Read(//d/user-files/Desktop/digitinary-website/**)",
+      "Bash(mkdir -p \"d:/user-files/Desktop/rubas-hennah/app/products/category/[slug]\")",
+      "Bash(node -e \"const p=require\\('./node_modules/next/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e ' *)"
     ],
     "additionalDirectories": [
-      "d:\\user-files\\Desktop\\rubas-hennah\\app\\_lib"
+      "d:\\user-files\\Desktop\\rubas-hennah\\app\\_lib",
+      "d:\\user-files\\Desktop\\rubas-hennah\\app\\products\\category"
     ]
   }
 }

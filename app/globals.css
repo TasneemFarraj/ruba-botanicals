@@ -217,7 +217,7 @@ html.lenis, html.lenis body { height: auto; }
 
 /* Hero text column — on mobile, needs enough top space to clear the fixed 60px navbar */
 .he-text {
-  padding-top: 5rem;
+  padding-top: 9rem;
   padding-bottom: 2rem;
 }
 @media (min-width: 768px) {

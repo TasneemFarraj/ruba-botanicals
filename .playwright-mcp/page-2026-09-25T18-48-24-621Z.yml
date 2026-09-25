@@ -1,0 +1,77 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - button "ربى للحناء" [ref=e4] [cursor=pointer]:
+        - img "ربى للحناء" [ref=e5]
+      - generic [ref=e6]:
+        - button "المتجر" [ref=e8] [cursor=pointer]
+        - button "خدماتنا" [ref=e10] [cursor=pointer]
+        - link "من ربى؟" [ref=e11] [cursor=pointer]:
+          - /url: /#about
+      - generic [ref=e12]:
+        - button "بحث" [ref=e13] [cursor=pointer]
+        - button "Toggle theme" [ref=e17] [cursor=pointer]
+        - button "السلة" [ref=e21] [cursor=pointer]
+    - generic [ref=e25]:
+      - textbox "ابحثي عن أي منتج..." [ref=e30]
+      - button "بحث" [ref=e31] [cursor=pointer]
+  - main [ref=e32]
+  - contentinfo [ref=e55]:
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - generic [ref=e59]: ربى للحناء
+        - paragraph [ref=e60]: حناء طبيعية أردنية فاخرة — نقش، شعر، أعشاب ومناسبات. مصنوعة بحب من قلب عمّان.
+        - generic [ref=e61]:
+          - link "Instagram" [ref=e62] [cursor=pointer]:
+            - /url: https://www.instagram.com/rubafarrajhenna
+          - link "Facebook" [ref=e65] [cursor=pointer]:
+            - /url: https://www.facebook.com/share/1Eyz9QZt6g/
+          - link "WhatsApp" [ref=e68] [cursor=pointer]:
+            - /url: https://wa.me/962789795740
+      - generic [ref=e71]:
+        - paragraph [ref=e72]: المتجر
+        - list [ref=e73]:
+          - listitem [ref=e74]:
+            - link "حناء النقش" [ref=e75] [cursor=pointer]:
+              - /url: /products?cat=henna-naqsh
+          - listitem [ref=e76]:
+            - link "حناء الشعر" [ref=e77] [cursor=pointer]:
+              - /url: /products?cat=henna-hair
+          - listitem [ref=e78]:
+            - link "العناية الطبيعية" [ref=e79] [cursor=pointer]:
+              - /url: /products?cat=hair-care
+          - listitem [ref=e80]:
+            - link "العناية بالجسم" [ref=e81] [cursor=pointer]:
+              - /url: /products?cat=body-care
+          - listitem [ref=e82]:
+            - link "خدماتنا" [ref=e83] [cursor=pointer]:
+              - /url: /products?cat=services
+      - generic [ref=e84]:
+        - paragraph [ref=e85]: معلومات
+        - list [ref=e86]:
+          - listitem [ref=e87]:
+            - link "من ربى؟" [ref=e88] [cursor=pointer]:
+              - /url: /#about
+          - listitem [ref=e89]:
+            - link "تواصلي معنا" [ref=e90] [cursor=pointer]:
+              - /url: /#contact
+          - listitem [ref=e91]:
+            - link "سياسة الخصوصية" [ref=e92] [cursor=pointer]:
+              - /url: /#privacy
+      - generic [ref=e93]:
+        - paragraph [ref=e94]: اطلبي مباشرة
+        - paragraph [ref=e95]: جاهزون للرد على استفساراتك في أي وقت — تحدثي معنا مباشرة.
+        - link "تواصلي عبر واتساب" [ref=e96] [cursor=pointer]:
+          - /url: https://wa.me/962789795740
+    - generic [ref=e101]:
+      - paragraph [ref=e102]: © 2026 ربى للحناء — جميع الحقوق محفوظة
+      - link "+962789795740" [ref=e103] [cursor=pointer]:
+        - /url: https://wa.me/962789795740
+  - generic [ref=e104]:
+    - generic [ref=e105]:
+      - generic [ref=e106]: سلتك
+      - button [ref=e111] [cursor=pointer]
+    - generic [ref=e117]:
+      - paragraph [ref=e125]: السلة فارغة
+      - button "متابعة التسوق" [ref=e126] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e132] [cursor=pointer]

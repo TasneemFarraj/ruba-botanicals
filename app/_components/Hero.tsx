@@ -138,7 +138,7 @@ export default function Hero() {
         </div>
 
         {/* ── Text column ── */}
-        <div className="he-text relative z-10 flex flex-col justify-center w-full md:w-[44%] px-6 md:px-10 lg:px-16 xl:px-24 order-1 md:order-2 pt-32 md:pt-0">
+        <div className="he-text relative z-10 flex flex-col justify-center w-full md:w-[44%] px-6 md:px-10 lg:px-16 xl:px-24 order-1 md:order-2 pt-52 md:pt-0">
 
           <h1
             className="he-h1 font-display"
