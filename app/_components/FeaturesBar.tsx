@@ -83,8 +83,13 @@ export default function FeaturesBar() {
   const t = TESTIMONIALS[idx];
 
   return (
-    <section style={{ background: "var(--cream)" }}>
-      <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
+    <section
+      style={{ background: "var(--white)" }}
+    >
+      <div
+        className="max-w-7xl mx-auto px-6 md:px-10"
+        style={{ paddingTop: "var(--section-py)", paddingBottom: "var(--section-py)" }}
+      >
         <div className="flex flex-col md:flex-row items-stretch gap-8 md:gap-0">
 
           {/* Features — first in DOM = right side in RTL flex */}
@@ -98,10 +103,10 @@ export default function FeaturesBar() {
                   {icon}
                 </div>
                 <div>
-                  <p className="text-xs font-bold" style={{ color: "var(--text-dark)", letterSpacing: "0.04em" }}>
+                  <p style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text-dark)", letterSpacing: "0.04em" }}>
                     {title}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  <p style={{ fontSize: "var(--fs-xs)", marginTop: "0.25rem", color: "var(--text-muted)" }}>
                     {subtitle}
                   </p>
                 </div>
@@ -130,10 +135,10 @@ export default function FeaturesBar() {
                 transition: "opacity 0.35s ease, transform 0.35s ease",
               }}
             >
-              <p className="text-sm leading-relaxed mb-3" style={{ color: "var(--text-muted)" }}>
+              <p style={{ fontSize: "var(--fs-base)", lineHeight: 1.75, marginBottom: "0.75rem", color: "var(--text-muted)" }}>
                 {t.quote}
               </p>
-              <p className="text-xs font-semibold" style={{ color: "var(--text-light)" }}>
+              <p style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: "var(--text-light)" }}>
                 — {t.author}
               </p>
             </div>

@@ -1,20 +1,25 @@
 import { Suspense } from "react";
 import Navbar from "../_components/Navbar";
 import Footer from "../_components/Footer";
-import ProductsPage from "./[id]/page";
+import ProductPageClient from "./ProductPageClient";
 
-export default function Page() {
+export default function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   return (
     <>
       <Navbar />
       <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center"
-          style={{ background: "var(--cream)" }}>
-          <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
-            style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }} />
+        <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
+          <div
+            className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }}
+          />
         </div>
       }>
-        <ProductsPage />
+        <ProductPageClient searchParams={searchParams} />
       </Suspense>
       <Footer />
     </>

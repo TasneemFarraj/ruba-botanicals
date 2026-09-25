@@ -1,130 +1,117 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCategories, getProducts } from "../_lib/supabase";
-import type { Category, Product } from "../_types";
-import ProductCard from "./ProductCard";
-import ProductPanel from "./ProductPanel";
+import Link from "next/link";
+import Image from "next/image";
+import { getCategories, supabase } from "../_lib/supabase";
+import type { Category } from "../_types";
 import { ui } from "../_lib/translations";
+import EmptyState from "./shared/EmptyState";
+import SectionHeader from "./shared/SectionHeader";
 
 const t = ui.categories;
-const ALL = "__all__";
-const CARD_BG = ["#fafaf8", "#f8f9f7", "#f9f8f6", "#f7f9f8", "#f9f7f8"];
+
+const CARD_PALETTES = [
+  { bg: "linear-gradient(155deg, #2d5a18 0%, #162e0b 100%)" },
+  { bg: "linear-gradient(155deg, #4a7c2a 0%, #2a4a16 100%)" },
+  { bg: "linear-gradient(155deg, #8a6b2e 0%, #5c4518 100%)" },
+  { bg: "linear-gradient(155deg, #1e4a38 0%, #0f2a20 100%)" },
+  { bg: "linear-gradient(155deg, #5c3d2e 0%, #38261c 100%)" },
+  { bg: "linear-gradient(155deg, #3a5c2a 0%, #1e3014 100%)" },
+];
 
 export default function Categories() {
-  const [categories,   setCategories]   = useState<Category[]>([]);
-  const [products,     setProducts]     = useState<Product[]>([]);
-  const [activeSlug,   setActiveSlug]   = useState<string>(ALL);
-  const [panelProduct, setPanelProduct] = useState<Product | null>(null);
-  const [loadingCats,  setLoadingCats]  = useState(true);
-  const [loadingProds, setLoadingProds] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getCategories(), getProducts()]).then(([cats, prods]) => {
-      setCategories(cats);
-      setProducts(prods);
-      setLoadingCats(false);
-      setLoadingProds(false);
-    });
+    getCategories().then((cats) => { setCategories(cats); setLoading(false); });
+
+    const channel = supabase
+      .channel("categories-public")
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => {
+        getCategories().then(setCategories);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const handleTab = async (slug: string) => {
-    if (slug === activeSlug) return;
-    setActiveSlug(slug);
-    setLoadingProds(true);
-    const data = slug === ALL ? await getProducts() : await getProducts(slug);
-    setProducts(data);
-    setLoadingProds(false);
-  };
-
   return (
-    <section className="py-20" style={{ background: "var(--white)" }}>
+    <section
+      style={{ background: "var(--white)", paddingTop: "var(--section-py)", paddingBottom: "var(--section-py)" }}
+    >
       <div className="max-w-7xl mx-auto px-6 md:px-10">
 
-        {/* Header */}
-        <div className="mb-10">
-          <span className="block text-[11px] font-semibold tracking-[0.22em] uppercase mb-3" style={{ color: "var(--gold)" }}>
-            Collection
-          </span>
-          <h2 className="font-display leading-tight" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", color: "var(--text-dark)" }}>
-            {t.heading}
-          </h2>
-          <p className="mt-2 text-[15px] leading-relaxed" style={{ fontFamily: "var(--font-naskh)", color: "var(--text-muted)" }}>
-            {t.subheading}
-          </p>
-        </div>
+        <SectionHeader
+          heading={t.heading}
+          desc={t.subheading}
+          className="mb-8"
+        />
 
-        {/* Tabs */}
-        <div
-          className="mb-10 overflow-x-auto"
-          style={{ borderBottom: "1px solid var(--border)", scrollbarWidth: "none" } as React.CSSProperties}
-        >
-          <div className="flex w-max">
-            <Tab active={activeSlug === ALL} onClick={() => handleTab(ALL)}>
-              {t.all}
-            </Tab>
-            {loadingCats
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="animate-pulse mx-3 mb-3 rounded h-4" style={{ width: 48 + i * 14, background: "var(--cream-card)" }} />
-                ))
-              : categories.map((cat) => (
-                  <Tab key={cat.id} active={activeSlug === cat.slug} onClick={() => handleTab(cat.slug)}>
-                    {cat.name_ar}
-                  </Tab>
-                ))
-            }
-          </div>
-        </div>
-
-        {/* Product count */}
-        {!loadingProds && products.length > 0 && (
-          <p className="text-[11px] mb-6" style={{ color: "var(--text-light)" }}>
-            {products.length} منتج
-          </p>
-        )}
-
-        {/* Products grid */}
-        {loadingProds ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="rounded-lg mb-3" style={{ aspectRatio: "1/1", background: "var(--cream-card)" }} />
-                <div className="h-3 rounded-sm mb-2 w-3/4" style={{ background: "var(--cream-card)" }} />
-                <div className="h-3 rounded-sm w-1/2"       style={{ background: "var(--cream-card)" }} />
-              </div>
+              <div key={i} className="animate-pulse rounded-2xl" style={{ aspectRatio: "3/4", background: "var(--cream-card)" }} />
             ))}
           </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-24" style={{ color: "var(--text-light)" }}>
-            <p className="text-sm">{t.empty}</p>
-          </div>
+        ) : categories.length === 0 ? (
+          <EmptyState title="لا توجد فئات حتى الآن" />
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
-            {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} onOpenPanel={setPanelProduct} bgColor={CARD_BG[i % CARD_BG.length]} />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+            {categories.map((cat, i) => (
+              <CategoryCard key={cat.id} category={cat} palette={CARD_PALETTES[i % CARD_PALETTES.length]} />
             ))}
           </div>
         )}
 
       </div>
-      <ProductPanel product={panelProduct} onClose={() => setPanelProduct(null)} />
     </section>
   );
 }
 
-function Tab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function CategoryCard({ category, palette }: { category: Category; palette: { bg: string } }) {
   return (
-    <button
-      onClick={onClick}
-      className="relative shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium transition-colors duration-200"
-      style={{
-        color:        active ? "var(--forest)"   : "var(--text-muted)",
-        borderBottom: active ? "2px solid var(--forest-mid)" : "2px solid transparent",
-        marginBottom: -1,
-        background:   "transparent",
-      }}
+    <Link
+      href={`/products/category/${category.slug}`}
+      className="group relative block overflow-hidden rounded-2xl"
+      style={{ aspectRatio: "3/4" }}
     >
-      {children}
-    </button>
+      {category.image_url ? (
+        <>
+          <Image
+            src={category.image_url}
+            alt={category.name_ar}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+            sizes="(max-width: 768px) 50vw, 33vw"
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, rgba(8,16,6,0.78) 0%, rgba(8,16,6,0.08) 55%, transparent 100%)" }}
+          />
+        </>
+      ) : (
+        <div className="absolute inset-0" style={{ background: palette.bg }} />
+      )}
+
+      {/* Category name — always at bottom */}
+      <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
+        <span
+          className="font-display text-white leading-snug"
+          style={{ fontSize: "clamp(0.9rem, 2.2vw, 1.1rem)", textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}
+        >
+          {category.name_ar}
+        </span>
+
+        <span
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white select-none"
+          style={{ fontSize: 22, lineHeight: 1, textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
+          aria-hidden="true"
+        >
+          ›
+        </span>
+      </div>
+    </Link>
   );
 }

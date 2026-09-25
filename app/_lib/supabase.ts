@@ -53,6 +53,27 @@ export async function getBestSellers(): Promise<Product[]> {
   return data ?? []
 }
 
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+  if (error) { console.error(error); return null }
+  return data
+}
+
+export async function searchProducts(query: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('in_stock', true)
+    .ilike('name_ar', `%${query}%`)
+    .order('sort_order')
+  if (error) { console.error(error); return [] }
+  return data ?? []
+}
+
 export async function getProductById(id: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')
@@ -61,6 +82,29 @@ export async function getProductById(id: string): Promise<Product | null> {
     .single()
   if (error) { console.error(error); return null }
   return data
+}
+
+export async function getCategoryById(id: string): Promise<Category | null> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) { console.error(error); return null }
+  return data
+}
+
+export async function getRelatedProducts(categoryId: string, excludeId: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('category_id', categoryId)
+    .eq('in_stock', true)
+    .neq('id', excludeId)
+    .order('sort_order')
+    .limit(4)
+  if (error) { console.error(error); return [] }
+  return data ?? []
 }
 
 export async function saveOrder(order: Omit<Order, 'id' | 'created_at'>): Promise<Order | null> {

@@ -19,23 +19,23 @@ const WA_SVG = (
 );
 
 const NAV_LINKS = [
-  { label: "حناء النقش",       href: "/products?cat=henna-naqsh" },
-  { label: "حناء الشعر",       href: "/products?cat=henna-hair"  },
-  { label: "العناية الطبيعية", href: "/products?cat=hair-care"   },
-  { label: "العناية بالجسم",   href: "/products?cat=body-care"   },
-  { label: "خدماتنا",          href: "/products?cat=services"    },
+  { label: "حناء النقش", href: "/products?cat=henna-naqsh" },
+  { label: "حناء الشعر", href: "/products?cat=henna-hair" },
+  { label: "العناية الطبيعية", href: "/products?cat=hair-care" },
+  { label: "العناية بالجسم", href: "/products?cat=body-care" },
+  { label: "خدماتنا", href: "/products?cat=services" },
 ];
 
 const INFO_LINKS = [
-  { label: "من نحن",           href: "/#about"   },
-  { label: "تواصلي معنا",     href: "/#contact" },
-  { label: "سياسة الخصوصية",  href: "/#privacy" },
+  { label: "من ربى؟", href: "/#about" },
+  { label: "تواصلي معنا", href: "/#contact" },
+  { label: "سياسة الخصوصية", href: "/#privacy" },
 ];
 
 const SOCIAL = [
-  { icon: IG_SVG, href: "#",                              label: "Instagram" },
-  { icon: FB_SVG, href: "#",                              label: "Facebook"  },
-  { icon: WA_SVG, href: "https://wa.me/962789838741",    label: "WhatsApp"  },
+  { icon: IG_SVG, href: "https://www.instagram.com/rubafarrajhenna", label: "Instagram" },
+  { icon: FB_SVG, href: "https://www.facebook.com/share/1Eyz9QZt6g/", label: "Facebook" },
+  { icon: WA_SVG, href: "https://wa.me/962789795740", label: "WhatsApp" },
 ];
 
 function FooterLink({ label, href }: { label: string; href: string }) {
@@ -45,8 +45,13 @@ function FooterLink({ label, href }: { label: string; href: string }) {
         href={href}
         className="text-sm transition-colors duration-200"
         style={{ color: "rgba(255,255,255,0.55)" }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)"; }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "#fff";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.color =
+            "rgba(255,255,255,0.55)";
+        }}
       >
         {label}
       </a>
@@ -57,18 +62,22 @@ function FooterLink({ label, href }: { label: string; href: string }) {
 export default function Footer() {
   return (
     <footer dir="rtl" style={{ background: "var(--forest)" }}>
-
       <div className="max-w-7xl mx-auto px-6 md:px-10 pt-16 pb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12">
-
           {/* Brand */}
           <div className="lg:col-span-1">
-            <div className="font-display text-xl mb-3" style={{ color: "#fff" }}>
+            <div
+              className="font-display text-xl mb-3"
+              style={{ color: "#fff" }}
+            >
               ربى للحناء
             </div>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: "rgba(255,255,255,0.5)" }}>
-              حناء طبيعية أردنية فاخرة — نقش، شعر، أعشاب ومناسبات.
-              مصنوعة بحب من قلب عمّان.
+            <p
+              className="text-sm leading-relaxed mb-6"
+              style={{ color: "rgba(255,255,255,0.5)" }}
+            >
+              حناء طبيعية أردنية فاخرة — نقش، شعر، أعشاب ومناسبات. مصنوعة بحب من
+              قلب عمّان.
             </p>
             <div className="flex items-center gap-2.5">
               {SOCIAL.map(({ icon, href, label }) => (
@@ -78,15 +87,21 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200"
-                  style={{ border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.55)" }}
+                  className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200"
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    color: "rgba(255,255,255,0.55)",
+                  }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.55)";
+                    (e.currentTarget as HTMLElement).style.borderColor =
+                      "rgba(255,255,255,0.55)";
                     (e.currentTarget as HTMLElement).style.color = "#fff";
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.18)";
-                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
+                    (e.currentTarget as HTMLElement).style.borderColor =
+                      "rgba(255,255,255,0.18)";
+                    (e.currentTarget as HTMLElement).style.color =
+                      "rgba(255,255,255,0.55)";
                   }}
                 >
                   {icon}
@@ -97,34 +112,50 @@ export default function Footer() {
 
           {/* Shop links */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
+            <p
+              className="text-[10px] font-semibold tracking-widest uppercase mb-5"
+              style={{ color: "rgba(255,255,255,0.3)" }}
+            >
               المتجر
             </p>
             <ul className="flex flex-col gap-3">
-              {NAV_LINKS.map((l) => <FooterLink key={l.label} {...l} />)}
+              {NAV_LINKS.map((l) => (
+                <FooterLink key={l.label} {...l} />
+              ))}
             </ul>
           </div>
 
           {/* Info links */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
+            <p
+              className="text-[10px] font-semibold tracking-widest uppercase mb-5"
+              style={{ color: "rgba(255,255,255,0.3)" }}
+            >
               معلومات
             </p>
             <ul className="flex flex-col gap-3">
-              {INFO_LINKS.map((l) => <FooterLink key={l.label} {...l} />)}
+              {INFO_LINKS.map((l) => (
+                <FooterLink key={l.label} {...l} />
+              ))}
             </ul>
           </div>
 
           {/* WhatsApp CTA — replaces newsletter */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
+            <p
+              className="text-[10px] font-semibold tracking-widest uppercase mb-5"
+              style={{ color: "rgba(255,255,255,0.3)" }}
+            >
               اطلبي مباشرة
             </p>
-            <p className="text-sm mb-5" style={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.8 }}>
+            <p
+              className="text-sm mb-5"
+              style={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.8 }}
+            >
               جاهزون للرد على استفساراتك في أي وقت — تحدثي معنا مباشرة.
             </p>
             <a
-              href="https://wa.me/962789838741"
+              href="https://wa.me/962789795740"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-75"
@@ -134,7 +165,6 @@ export default function Footer() {
               تواصلي عبر واتساب
             </a>
           </div>
-
         </div>
       </div>
 
@@ -149,18 +179,23 @@ export default function Footer() {
           © {new Date().getFullYear()} ربى للحناء — جميع الحقوق محفوظة
         </p>
         <a
-          href="https://wa.me/962789838741"
+          href="https://wa.me/962789795740"
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs transition-colors"
           style={{ color: "rgba(255,255,255,0.35)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.35)"; }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color =
+              "rgba(255,255,255,0.7)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color =
+              "rgba(255,255,255,0.35)";
+          }}
         >
-          +962 78 983 8741
+          +962789795740
         </a>
       </div>
-
     </footer>
   );
 }
