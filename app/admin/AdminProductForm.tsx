@@ -12,6 +12,8 @@ interface Props {
   onSuccess: (saved: Product) => void;
 }
 
+type HowToUseStep = { title: string; text: string };
+
 type FormState = {
   name_ar:        string;
   description_ar: string;
@@ -22,6 +24,9 @@ type FormState = {
   in_stock:       boolean;
   image_url:      string;
   image_no_bg_url: string;
+  storage_ar:     string;
+  expiry_ar:      string;
+  warnings_ar:    string;
 };
 
 export default function AdminProductForm({ product, categories, onClose, onSuccess }: Props) {
@@ -35,7 +40,15 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
     in_stock:        product?.in_stock        ?? true,
     image_url:       product?.image_url       ?? "",
     image_no_bg_url: product?.image_no_bg_url ?? "",
+    storage_ar:      product?.storage_ar      ?? "",
+    expiry_ar:       product?.expiry_ar       ?? "",
+    warnings_ar:     product?.warnings_ar?.join("\n") ?? "",
   });
+
+  // how_to_use_ar steps as local state
+  const [steps, setSteps] = useState<HowToUseStep[]>(
+    product?.how_to_use_ar ?? []
+  );
 
   const [imageFile,    setImageFile]    = useState<File | null>(null);
   const [noBgFile,     setNoBgFile]     = useState<File | null>(null);
@@ -73,6 +86,12 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
     reader.readAsDataURL(file);
   };
 
+  // Steps helpers
+  const addStep = () => setSteps(s => [...s, { title: "", text: "" }]);
+  const removeStep = (i: number) => setSteps(s => s.filter((_, idx) => idx !== i));
+  const updateStep = (i: number, field: keyof HowToUseStep, value: string) =>
+    setSteps(s => s.map((step, idx) => idx === i ? { ...step, [field]: value } : step));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name_ar.trim() || !form.price.trim()) {
@@ -95,6 +114,15 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
         if (url) noBgUrl = url;
       }
 
+      // Parse warnings (one per line)
+      const warningsArr = form.warnings_ar
+        .split("\n")
+        .map(w => w.trim())
+        .filter(Boolean);
+
+      // Filter out empty steps
+      const cleanSteps = steps.filter(s => s.title.trim() || s.text.trim());
+
       const payload = {
         name_ar:         form.name_ar.trim(),
         description_ar:  form.description_ar.trim() || undefined,
@@ -106,6 +134,10 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
         image_url:       imageUrl || undefined,
         image_no_bg_url: noBgUrl  || undefined,
         sort_order:      product?.sort_order ?? 0,
+        how_to_use_ar:   cleanSteps.length > 0 ? cleanSteps : null,
+        storage_ar:      form.storage_ar.trim() || null,
+        expiry_ar:       form.expiry_ar.trim() || null,
+        warnings_ar:     warningsArr.length > 0 ? warningsArr : null,
       };
 
       let saved: Product | null;
@@ -128,6 +160,13 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
   const labelClass = "block text-[11px] font-medium mb-1";
   const labelStyle = { color: "var(--text-muted)" };
   const req = <span style={{ color: "#ef4444" }}> *</span>;
+
+  const sectionStyle = {
+    background: "#f7f8f7",
+    border: "1px solid #e5e9e4",
+    borderRadius: 10,
+    padding: "12px 14px",
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
@@ -278,6 +317,108 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
               <textarea rows={2} value={form.description_ar} placeholder="وصف مختصر للمنتج..."
                 onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
                 className={`${inputClass} resize-none`} style={inputStyle} />
+            </div>
+
+            {/* ── طريقة الاستخدام ── */}
+            <div style={sectionStyle}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[12px] font-semibold" style={{ color: "var(--forest)" }}>🌿 طريقة الاستخدام</p>
+                <button
+                  type="button"
+                  onClick={addStep}
+                  className="text-[11px] px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
+                  style={{ background: "var(--forest)", color: "#fff" }}
+                >
+                  + خطوة
+                </button>
+              </div>
+              {steps.length === 0 && (
+                <p className="text-[11px] text-center py-2" style={{ color: "var(--text-light)" }}>
+                  لا توجد خطوات — اضغطي "+ خطوة" لإضافة
+                </p>
+              )}
+              <div className="space-y-2">
+                {steps.map((step, i) => (
+                  <div key={i} className="rounded-lg p-2 space-y-1.5" style={{ background: "#fff", border: "1px solid #e5e9e4" }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold shrink-0" style={{ color: "var(--forest)" }}>
+                        {i + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={step.title}
+                        placeholder="عنوان الخطوة (مثال: الجرعة)"
+                        onChange={(e) => updateStep(i, "title", e.target.value)}
+                        className="flex-1 px-2 py-1 rounded text-[12px] outline-none"
+                        style={{ background: "#f7f8f7", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeStep(i)}
+                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded transition-opacity hover:opacity-60"
+                        style={{ color: "#ef4444" }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={step.text}
+                      placeholder="تفاصيل الخطوة..."
+                      onChange={(e) => updateStep(i, "text", e.target.value)}
+                      className="w-full px-2 py-1 rounded text-[12px] outline-none resize-none"
+                      style={{ background: "#f7f8f7", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── التخزين والصلاحية ── */}
+            <div style={sectionStyle}>
+              <p className="text-[12px] font-semibold mb-2" style={{ color: "var(--forest)" }}>📦 التخزين والصلاحية</p>
+              <div className="space-y-2">
+                <div>
+                  <label className={labelClass} style={labelStyle}>شروط التخزين</label>
+                  <input
+                    type="text"
+                    value={form.storage_ar}
+                    placeholder="مثال: يُحفظ في مكان بارد وجاف بعيداً عن الشمس"
+                    onChange={(e) => setForm({ ...form, storage_ar: e.target.value })}
+                    className={inputClass}
+                    style={{ background: "#fff", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} style={labelStyle}>مدة الصلاحية</label>
+                  <input
+                    type="text"
+                    value={form.expiry_ar}
+                    placeholder="مثال: سنتان من تاريخ الإنتاج"
+                    onChange={(e) => setForm({ ...form, expiry_ar: e.target.value })}
+                    className={inputClass}
+                    style={{ background: "#fff", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── التحذيرات ── */}
+            <div style={sectionStyle}>
+              <p className="text-[12px] font-semibold mb-1" style={{ color: "var(--forest)" }}>⚠️ التحذيرات</p>
+              <p className="text-[10px] mb-2" style={{ color: "var(--text-light)" }}>
+                اكتبي كل تحذير في سطر منفصل
+              </p>
+              <textarea
+                rows={3}
+                value={form.warnings_ar}
+                placeholder={"مثال:\nيُنصح بإجراء اختبار الحساسية قبل الاستخدام\nيُبعد عن متناول الأطفال"}
+                onChange={(e) => setForm({ ...form, warnings_ar: e.target.value })}
+                className={`${inputClass} resize-none`}
+                style={{ background: "#fff", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+              />
             </div>
 
             {/* Toggles */}

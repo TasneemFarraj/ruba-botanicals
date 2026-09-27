@@ -15,21 +15,6 @@ import ProductCard from "@/app/_components/ProductCard";
 import EmptyState from "@/app/_components/shared/EmptyState";
 import type { Product, Category } from "@/app/_types";
 
-const USAGE_STEPS = [
-  { title: "بلّلي الشعر", desc: "بلّلي الشعر وفروة الرأس بالكامل بماء فاتر، لا ساخن." },
-  { title: "خذي الكمية المناسبة", desc: "ضعي كمية بحجم حبة البندق في راحة يدك، وضاعفيها للشعر الطويل أو الكثيف." },
-  { title: "وزّعي على الفروة", desc: "وزّعي على فروة الرأس مباشرةً وليس على أطراف الشعر." },
-  { title: "دلّكي بلطف", desc: "دلّكي بأطراف الأصابع بحركات دائرية لمدة 2–3 دقائق دون استخدام الأظافر." },
-  { title: "اتركيه يعمل", desc: "اتركيه على الشعر دقيقتين ليمتص الفروة المكوّنات." },
-  { title: "اشطفي جيداً", desc: "اشطفي بالماء حتى يزول تماماً، وكرّري الخطوات عند الحاجة." },
-];
-
-const WARNINGS = [
-  "للاستخدام الخارجي فقط. تجنّبي ملامسة العينين والأغشية المخاطية.",
-  "في حال حدوث تهيّج أو احمرار، توقّفي عن الاستخدام فوراً واستشيري الطبيب.",
-  "يُحفظ بعيداً عن متناول الأطفال.",
-  "للحوامل والمرضعات: يُنصح باستشارة الطبيب قبل الاستخدام.",
-];
 
 export default function ProductDetailPage({
   params,
@@ -298,44 +283,36 @@ export default function ProductDetailPage({
                       />
 
                       <div className="space-y-5">
-                        {USAGE_STEPS.map((step, i) => (
-                          <div key={i} className="flex gap-4 items-start relative">
-                            <div
-                              className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium relative z-10"
-                              style={{
-                                border: "1.5px solid var(--border-str)",
-                                background: "var(--white)",
-                                color: "var(--text-3)",
-                                fontFamily: "var(--font-display), Georgia, serif",
-                              }}
-                            >
-                              {i + 1}
+                        {product.how_to_use_ar && product.how_to_use_ar.length > 0 ? (
+                          product.how_to_use_ar.map((step, i) => (
+                            <div key={i} className="flex gap-4 items-start relative">
+                              <div
+                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium relative z-10"
+                                style={{
+                                  border: "1.5px solid var(--border-str)",
+                                  background: "var(--white)",
+                                  color: "var(--text-3)",
+                                  fontFamily: "var(--font-display), Georgia, serif",
+                                }}
+                              >
+                                {i + 1}
+                              </div>
+                              <div className="pb-1">
+                                <p className="font-semibold text-[15px] mb-1 leading-snug" style={{ color: "var(--text-1)" }}>
+                                  {step.title}
+                                </p>
+                                <p className="text-[14px] leading-[1.8]" style={{ color: "var(--text-2)" }}>
+                                  {step.text}
+                                </p>
+                              </div>
                             </div>
-                            <div className="pb-1">
-                              <p className="font-semibold text-[15px] mb-1 leading-snug" style={{ color: "var(--text-1)" }}>
-                                {step.title}
-                              </p>
-                              <p className="text-[14px] leading-[1.8]" style={{ color: "var(--text-2)" }}>
-                                {step.desc}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        ) : (
+                          <p className="text-[14px]" style={{ color: "var(--text-3)" }}>قريباً</p>
+                        )}
                       </div>
                     </div>
 
-                    {/* Tip */}
-                    <div className="mt-10 flex gap-3 items-start">
-                      <div
-                        className="shrink-0 mt-0.5 text-[11px] font-semibold tracking-[0.08em] uppercase px-2 py-0.5 rounded"
-                        style={{ background: "var(--gold-pale)", color: "var(--gold)" }}
-                      >
-                        نصيحة
-                      </div>
-                      <p className="text-[13px] leading-[1.9]" style={{ color: "var(--text-2)" }}>
-                        الرغوة التي تنزل أثناء الشطف تكفي لتنظيف أطراف الشعر، فلا داعي لفركها.
-                      </p>
-                    </div>
                   </div>
 
                   {/* Left (RTL): storage + warnings — flat, minimal */}
@@ -347,40 +324,47 @@ export default function ProductDetailPage({
                     </p>
 
                     <div className="space-y-0" style={{ borderTop: "1px solid var(--border)" }}>
-                      {[
-                        { label: "التخزين", value: "مكان بارد وجاف، بعيداً عن أشعة الشمس، أقل من 25°م." },
-                        { label: "الصلاحية", value: "12 شهراً من الفتح مع إغلاق العبوة جيداً." },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="py-4 flex gap-4"
-                          style={{ borderBottom: "1px solid var(--border)" }}
-                        >
+                      {product.storage_ar && (
+                        <div className="py-4 flex gap-4" style={{ borderBottom: "1px solid var(--border)" }}>
                           <span className="text-[14px] font-semibold shrink-0 w-16" style={{ color: "var(--text-1)" }}>
-                            {item.label}
+                            التخزين
                           </span>
                           <span className="text-[14px] leading-[1.8]" style={{ color: "var(--text-2)" }}>
-                            {item.value}
+                            {product.storage_ar}
                           </span>
                         </div>
-                      ))}
+                      )}
+                      {product.expiry_ar && (
+                        <div className="py-4 flex gap-4" style={{ borderBottom: "1px solid var(--border)" }}>
+                          <span className="text-[14px] font-semibold shrink-0 w-16" style={{ color: "var(--text-1)" }}>
+                            الصلاحية
+                          </span>
+                          <span className="text-[14px] leading-[1.8]" style={{ color: "var(--text-2)" }}>
+                            {product.expiry_ar}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Warnings */}
-                    <p className="text-[11px] tracking-[0.12em] uppercase mt-8 mb-4" style={{ color: "var(--text-3)" }}>
-                      تحذيرات
-                    </p>
-                    <ul className="space-y-3.5">
-                      {WARNINGS.map((w, i) => (
-                        <li key={i} className="flex gap-3 items-start text-[14px] leading-[1.85]" style={{ color: "var(--text-2)" }}>
-                          <span
-                            className="shrink-0 mt-[7px] w-1 h-1 rounded-full"
-                            style={{ background: "var(--text-3)" }}
-                          />
-                          {w}
-                        </li>
-                      ))}
-                    </ul>
+                    {product.warnings_ar && product.warnings_ar.length > 0 && (
+                      <>
+                        <p className="text-[11px] tracking-[0.12em] uppercase mt-8 mb-4" style={{ color: "var(--text-3)" }}>
+                          تحذيرات
+                        </p>
+                        <ul className="space-y-3.5">
+                          {product.warnings_ar.map((w, i) => (
+                            <li key={i} className="flex gap-3 items-start text-[14px] leading-[1.85]" style={{ color: "var(--text-2)" }}>
+                              <span
+                                className="shrink-0 mt-[7px] w-1 h-1 rounded-full"
+                                style={{ background: "var(--text-3)" }}
+                              />
+                              {w}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </div>
 
                 </div>

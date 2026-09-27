@@ -75,7 +75,7 @@ export default function Hero() {
           {SLIDES.map((slide, i) => (
             <div
               key={i}
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex items-end justify-center"
               style={{
                 opacity: i === active ? 1 : 0,
                 transition: "opacity 1.3s ease",
@@ -83,13 +83,15 @@ export default function Hero() {
                 filter: "drop-shadow(0 30px 30px rgba(0,0,0,0.25))",
               }}
             >
-              <Image
-                src={slide.img} alt={slide.alt} fill
-                className="object-contain object-center"
-                style={{ padding: "clamp(1.5rem, 5vw, 5rem)" }}
-                priority={i === 0}
-                sizes="(max-width: 768px) 100vw, 56vw"
-              />
+              <div className="relative w-full" style={{ height: "90%" }}>
+                <Image
+                  src={slide.img} alt={slide.alt} fill
+                  className="object-contain object-bottom"
+                  style={{ paddingTop: "clamp(1.5rem, 5vw, 5rem)", paddingLeft: "clamp(1.5rem, 5vw, 5rem)", paddingRight: "clamp(1.5rem, 5vw, 5rem)", paddingBottom: 0 }}
+                  priority={i === 0}
+                  sizes="(max-width: 768px) 100vw, 56vw"
+                />
+              </div>
             </div>
           ))}
 
