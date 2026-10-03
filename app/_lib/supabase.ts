@@ -19,7 +19,6 @@ export async function getProducts(categorySlug?: string): Promise<Product[]> {
   let query = supabase
     .from('products')
     .select('*, categories!inner(slug)')
-    .eq('in_stock', true)
     .order('sort_order')
 
   if (categorySlug) {
@@ -28,14 +27,13 @@ export async function getProducts(categorySlug?: string): Promise<Product[]> {
 
   const { data, error } = await query
   if (error) { console.error(error); return [] }
-  return data ?? []
+  return (data ?? []) as Product[]
 }
 
 export async function getNavProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('in_stock', true)
     .order('sort_order')
   if (error) { console.error(error); return [] }
   return data ?? []
@@ -67,7 +65,6 @@ export async function searchProducts(query: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('in_stock', true)
     .ilike('name_ar', `%${query}%`)
     .order('sort_order')
   if (error) { console.error(error); return [] }
@@ -99,7 +96,6 @@ export async function getRelatedProducts(categoryId: string, excludeId: string):
     .from('products')
     .select('*')
     .eq('category_id', categoryId)
-    .eq('in_stock', true)
     .neq('id', excludeId)
     .order('sort_order')
     .limit(4)

@@ -19,6 +19,7 @@ type FormState = {
   description_ar: string;
   price:          string;
   unit:           string;
+  sort_order:     string;
   category_id:    string;
   is_best_seller: boolean;
   in_stock:       boolean;
@@ -35,6 +36,7 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
     description_ar:  product?.description_ar  ?? "",
     price:           product?.price?.toString() ?? "",
     unit:            product?.unit            ?? "",
+    sort_order:      product?.sort_order?.toString() ?? "0",
     category_id:     product?.category_id     ?? "",
     is_best_seller:  product?.is_best_seller  ?? false,
     in_stock:        product?.in_stock        ?? true,
@@ -94,8 +96,8 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name_ar.trim() || !form.price.trim()) {
-      setError("اسم المنتج والسعر مطلوبان");
+    if (!form.name_ar.trim()) {
+      setError("اسم المنتج مطلوب");
       return;
     }
     setLoading(true);
@@ -126,7 +128,7 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
       const payload = {
         name_ar:         form.name_ar.trim(),
         description_ar:  form.description_ar.trim() || undefined,
-        price:           parseFloat(form.price),
+        price:           form.price.trim() ? parseFloat(form.price) : undefined,
         unit:            form.unit.trim() || undefined,
         category_id:     form.category_id || undefined,
         is_best_seller:  form.is_best_seller,
@@ -240,11 +242,11 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
                 className={inputClass} style={inputStyle} />
             </div>
 
-            {/* Price + Unit */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Price + Unit + Sort order */}
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className={labelClass} style={labelStyle}>السعر (د.أ){req}</label>
-                <input type="number" required min="0" step="0.01" value={form.price} placeholder="0.00" dir="ltr"
+                <label className={labelClass} style={labelStyle}>السعر (د.أ)</label>
+                <input type="number" min="0" step="0.01" value={form.price} placeholder="0.00" dir="ltr"
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
                   className={`${inputClass} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                   style={inputStyle} />
@@ -254,6 +256,13 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
                 <input type="text" value={form.unit} placeholder="مثال: 50g"
                   onChange={(e) => setForm({ ...form, unit: e.target.value })}
                   className={inputClass} style={inputStyle} />
+              </div>
+              <div>
+                <label className={labelClass} style={labelStyle}>الترتيب</label>
+                <input type="number" inputMode="numeric" value={form.sort_order} placeholder="0" dir="ltr"
+                  onChange={(e) => setForm({ ...form, sort_order: e.target.value })}
+                  className={`${inputClass} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  style={inputStyle} />
               </div>
             </div>
 
@@ -316,7 +325,109 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
               <label className={labelClass} style={labelStyle}>الوصف</label>
               <textarea rows={2} value={form.description_ar} placeholder="وصف مختصر للمنتج..."
                 onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
-                className={`${inputClass} resize-none`} style={inputStyle} />
+                className={`${inputClass} resize-y`} style={inputStyle} />
+            </div>
+
+            {/* ── طريقة الاستخدام ── */}
+            <div style={sectionStyle}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[12px] font-semibold" style={{ color: "var(--forest)" }}>🌿 طريقة الاستخدام</p>
+                <button
+                  type="button"
+                  onClick={addStep}
+                  className="text-[11px] px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
+                  style={{ background: "var(--forest)", color: "#fff" }}
+                >
+                  + خطوة
+                </button>
+              </div>
+              {steps.length === 0 && (
+                <p className="text-[11px] text-center py-2" style={{ color: "var(--text-light)" }}>
+                  لا توجد خطوات — اضغطي "+ خطوة" لإضافة
+                </p>
+              )}
+              <div className="space-y-2">
+                {steps.map((step, i) => (
+                  <div key={i} className="rounded-lg p-2 space-y-1.5" style={{ background: "#fff", border: "1px solid #e5e9e4" }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold shrink-0" style={{ color: "var(--forest)" }}>
+                        {i + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={step.title}
+                        placeholder="عنوان الخطوة (مثال: الجرعة)"
+                        onChange={(e) => updateStep(i, "title", e.target.value)}
+                        className="flex-1 px-2 py-1 rounded text-[12px] outline-none"
+                        style={{ background: "#f7f8f7", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeStep(i)}
+                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded transition-opacity hover:opacity-60"
+                        style={{ color: "#ef4444" }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={step.text}
+                      placeholder="تفاصيل الخطوة..."
+                      onChange={(e) => updateStep(i, "text", e.target.value)}
+                      className="w-full px-2 py-1 rounded text-[12px] outline-none resize-y"
+                      style={{ background: "#f7f8f7", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── التخزين والصلاحية ── */}
+            <div style={sectionStyle}>
+              <p className="text-[12px] font-semibold mb-2" style={{ color: "var(--forest)" }}>📦 التخزين والصلاحية</p>
+              <div className="space-y-2">
+                <div>
+                  <label className={labelClass} style={labelStyle}>شروط التخزين</label>
+                  <input
+                    type="text"
+                    value={form.storage_ar}
+                    placeholder="مثال: يُحفظ في مكان بارد وجاف بعيداً عن الشمس"
+                    onChange={(e) => setForm({ ...form, storage_ar: e.target.value })}
+                    className={inputClass}
+                    style={{ background: "#fff", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} style={labelStyle}>مدة الصلاحية</label>
+                  <input
+                    type="text"
+                    value={form.expiry_ar}
+                    placeholder="مثال: سنتان من تاريخ الإنتاج"
+                    onChange={(e) => setForm({ ...form, expiry_ar: e.target.value })}
+                    className={inputClass}
+                    style={{ background: "#fff", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── التحذيرات ── */}
+            <div style={sectionStyle}>
+              <p className="text-[12px] font-semibold mb-1" style={{ color: "var(--forest)" }}>⚠️ التحذيرات</p>
+              <p className="text-[10px] mb-2" style={{ color: "var(--text-light)" }}>
+                اكتبي كل تحذير في سطر منفصل
+              </p>
+              <textarea
+                rows={3}
+                value={form.warnings_ar}
+                placeholder={"مثال:\nيُنصح بإجراء اختبار الحساسية قبل الاستخدام\nيُبعد عن متناول الأطفال"}
+                onChange={(e) => setForm({ ...form, warnings_ar: e.target.value })}
+                className={`${inputClass} resize-y`}
+                style={{ background: "#fff", border: "1px solid #e5e9e4", color: "var(--text-dark)" }}
+              />
             </div>
 
             {/* ── طريقة الاستخدام ── */}

@@ -46,7 +46,7 @@ export default function ProductPanel({ product, onClose }: Props) {
   }, [isOpen]);
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || !product.price) return;
     for (let i = 0; i < qty; i++) {
       addItem({
         id: product.id,
@@ -170,7 +170,7 @@ export default function ProductPanel({ product, onClose }: Props) {
 
             {/* Description */}
             {product?.description_ar && (
-              <p className="text-[14.5px] leading-[1.9] mb-5" style={{ color: "var(--text-2)" }}>
+              <p className="text-[14.5px] leading-[1.9] mb-5 whitespace-pre-line" style={{ color: "var(--text-2)" }}>
                 {product.description_ar}
               </p>
             )}

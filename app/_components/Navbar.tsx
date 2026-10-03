@@ -39,6 +39,12 @@ export default function Navbar() {
   const router                 = useRouter();
   const isHome                 = pathname === "/";
 
+  const heroMode  = isHome && !scrolled;
+  const linkColor = "var(--forest)";
+  const iconColor = "var(--forest)";
+  const sepColor  = "var(--border)";
+  const linkShadow= "none";
+
   useEffect(() => {
     getCategories().then(setCategories);
     getNavProducts().then(setNavProducts);
@@ -145,25 +151,29 @@ export default function Navbar() {
           {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-12">
             <div onMouseEnter={() => handleEnter("shop")} onMouseLeave={handleLeave}>
-              <button className={`font-display nav-underline text-[16px] transition-colors duration-200 cursor-pointer ${openMenu === "shop" ? "nav-active" : ""}`} style={{ color: openMenu === "shop" ? "var(--forest)" : "var(--forest)" }}>
+              <button
+                className={`font-display nav-underline text-[16px] transition-colors duration-200 cursor-pointer ${openMenu === "shop" ? "nav-active" : ""}`}
+                style={{ color: linkColor, textShadow: linkShadow }}
+              >
                 المتجر
               </button>
             </div>
             <div onMouseEnter={() => handleEnter("services")} onMouseLeave={handleLeave}>
-              <button className={`font-display nav-underline text-[16px] transition-colors duration-200 cursor-pointer ${openMenu === "services" ? "nav-active" : ""}`} style={{ color: openMenu === "services" ? "var(--forest)" : "var(--forest)" }}>
+              <button
+                className={`font-display nav-underline text-[16px] transition-colors duration-200 cursor-pointer ${openMenu === "services" ? "nav-active" : ""}`}
+                style={{ color: linkColor, textShadow: linkShadow }}
+              >
                 خدماتنا
               </button>
             </div>
             <a
               href="/#about"
               className={`font-display nav-underline text-[16px] transition-colors duration-200${atAbout ? " nav-active" : ""}`}
-              style={{ color: atAbout ? "var(--forest)" : "var(--forest)", textDecoration: "none" }}
+              style={{ color: linkColor, textShadow: linkShadow, textDecoration: "none" }}
               onClick={(e) => {
                 const el = document.getElementById("about");
                 if (el) { e.preventDefault(); el.scrollIntoView({ behavior: "smooth" }); }
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--forest)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = atAbout ? "var(--forest)" : "var(--forest)")}
             >
               من ربى؟
             </a>
@@ -176,9 +186,7 @@ export default function Navbar() {
             <button
               onClick={() => setSearchOpen((o) => !o)}
               className="w-7 h-7 flex items-center justify-center transition-colors duration-300"
-              style={{ color: "var(--forest)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--forest-mid)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--forest)")}
+              style={{ color: iconColor }}
               aria-label="بحث"
             >
               {searchOpen ? <X size={14} strokeWidth={1.8} /> : <Search size={14} strokeWidth={1.8} />}
@@ -187,22 +195,18 @@ export default function Navbar() {
             <button
               onClick={toggleTheme}
               className="hidden md:flex items-center justify-center transition-colors duration-300"
-              style={{ color: "var(--forest)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--forest-mid)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--forest)")}
+              style={{ color: iconColor }}
               aria-label="Toggle theme"
             >
               {theme === "dark" ? <Sun size={14} strokeWidth={1.8} /> : <Moon size={14} strokeWidth={1.8} />}
             </button>
 
-            <span className="hidden md:block w-px h-4" style={{ background: "var(--border)" }} />
+            <span className="hidden md:block w-px h-4" style={{ background: sepColor }} />
 
             <button
               onClick={openCart}
               className="relative w-7 h-7 flex items-center justify-center transition-colors duration-300"
-              style={{ color: "var(--forest)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--forest-mid)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--forest)")}
+              style={{ color: iconColor }}
               aria-label="السلة"
             >
               <ShoppingBag size={15} strokeWidth={1.6} />
@@ -226,7 +230,7 @@ export default function Navbar() {
             </button>
 
             <button onClick={() => setMenuOpen((o) => !o)} className="md:hidden flex flex-col justify-center items-center gap-[5px] w-7 h-7" aria-label={menuOpen ? "إغلاق" : "القائمة"}>
-              <Burger open={menuOpen} />
+              <Burger open={menuOpen} color={iconColor} />
             </button>
           </div>
         </div>
@@ -541,12 +545,12 @@ export default function Navbar() {
   );
 }
 
-function Burger({ open }: { open: boolean }) {
+function Burger({ open, color = "var(--forest)" }: { open: boolean; color?: string }) {
   return (
     <>
-      <span className="block h-[1.5px] w-5 transition-all duration-300 origin-center" style={{ background: "var(--forest)", transform: open ? "translateY(6.5px) rotate(45deg)" : "none" }} />
-      <span className="block h-[1.5px] w-5 transition-all duration-200" style={{ background: "var(--forest)", opacity: open ? 0 : 1 }} />
-      <span className="block h-[1.5px] w-5 transition-all duration-300 origin-center" style={{ background: "var(--forest)", transform: open ? "translateY(-6.5px) rotate(-45deg)" : "none" }} />
+      <span className="block h-[1.5px] w-5 transition-all duration-300 origin-center" style={{ background: color, transform: open ? "translateY(6.5px) rotate(45deg)" : "none" }} />
+      <span className="block h-[1.5px] w-5 transition-all duration-200" style={{ background: color, opacity: open ? 0 : 1 }} />
+      <span className="block h-[1.5px] w-5 transition-all duration-300 origin-center" style={{ background: color, transform: open ? "translateY(-6.5px) rotate(-45deg)" : "none" }} />
     </>
   );
 }

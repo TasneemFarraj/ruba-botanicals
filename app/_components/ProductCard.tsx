@@ -18,6 +18,7 @@ export default function ProductCard({ product, bgColor }: Props) {
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!product.price || !product.in_stock) return;
     addItem({
       id: product.id,
       name_ar: product.name_ar,
@@ -62,6 +63,7 @@ export default function ProductCard({ product, bgColor }: Props) {
             alt={product.name_ar}
             fill
             className="object-contain p-6 transition-transform duration-500 group-hover:scale-[1.04]"
+            style={!product.in_stock ? { filter: "grayscale(0.25) opacity(0.9)" } : undefined}
             sizes="(max-width: 768px) 50vw, 25vw"
           />
         ) : (
@@ -77,7 +79,32 @@ export default function ProductCard({ product, bgColor }: Props) {
           </div>
         )}
 
+        {/* Out-of-stock overlay */}
+        {!product.in_stock && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center"
+            style={{ background: "rgba(245,245,243,0.35)", borderRadius: "inherit" }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#6b7280",
+                letterSpacing: "0.1em",
+                padding: "5px 14px",
+                borderRadius: 999,
+                background: "rgba(255,255,255,0.85)",
+                border: "1px solid rgba(0,0,0,0.08)",
+                boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
+              }}
+            >
+              نفد من المخزون
+            </span>
+          </div>
+        )}
+
         {/* ── Hover gradient overlay ── */}
+        {product.in_stock && (
         <div
           className="absolute inset-0 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{
@@ -89,6 +116,7 @@ export default function ProductCard({ product, bgColor }: Props) {
             عرض التفاصيل
           </span>
         </div>
+        )}
       </div>
 
       {/* ── Info ── */}
@@ -103,17 +131,19 @@ export default function ProductCard({ product, bgColor }: Props) {
         )}
       </div>
 
-      {/* ── Price + add ── */}
+      {/* ── Price + add — only when price is set ── */}
+      {(product.price ?? 0) > 0 && (
       <div className="px-0.5 mt-2.5 flex items-center justify-between">
         <span className="font-display text-[15px] font-semibold" style={{ color: "var(--gold)" }}>
-          {fmtPrice(product.price)}
+          {fmtPrice(product.price!)}
           <span className="text-[11px] font-normal ms-0.5" style={{ color: "var(--text-light)" }}>د.أ</span>
         </span>
 
         <button
           onClick={handleAdd}
+          disabled={!product.in_stock}
           aria-label="أضيفي للسلة"
-          className="rounded-full flex items-center justify-center transition-all duration-200"
+          className="rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-40 disabled:cursor-default"
           style={{
             width: 36,
             height: 36,
@@ -122,6 +152,7 @@ export default function ProductCard({ product, bgColor }: Props) {
             background: "transparent",
           }}
           onMouseEnter={(e) => {
+            if (!product.in_stock) return;
             const el = e.currentTarget as HTMLElement;
             el.style.background = "var(--forest)";
             el.style.color = "#fff";
@@ -139,6 +170,7 @@ export default function ProductCard({ product, bgColor }: Props) {
           </svg>
         </button>
       </div>
+      )}
     </div>
   );
 }

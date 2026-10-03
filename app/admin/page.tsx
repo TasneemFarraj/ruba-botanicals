@@ -330,9 +330,10 @@ export default function AdminPage() {
   const [toast, setToast] = useState<ToastState | null>(null);
 
   /* Orders */
-  const [orders,        setOrders]        = useState<Order[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [orders,          setOrders]          = useState<Order[]>([]);
+  const [ordersLoading,   setOrdersLoading]   = useState(false);
+  const [expandedOrder,   setExpandedOrder]   = useState<string | null>(null);
+  const [copiedAddressId, setCopiedAddressId] = useState<string | null>(null);
 
   /* Products */
   const [products,        setProducts]        = useState<Product[]>([]);
@@ -410,6 +411,13 @@ export default function AdminPage() {
   const updateOrderStatus = async (id: string, status: Order["status"]) => {
     await supabase.from("orders").update({ status }).eq("id", id);
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  };
+
+  const copyAddress = (order: Order) => {
+    const parts = [order.governorate, order.area, order.street_address].filter(Boolean);
+    navigator.clipboard.writeText(parts.join(" — "));
+    setCopiedAddressId(order.id);
+    setTimeout(() => setCopiedAddressId(null), 2000);
   };
 
   const handleConfirmDelete = async () => {
@@ -884,25 +892,95 @@ export default function AdminPage() {
                                 </tr>
                               ))}
 
-                              {/* Total row */}
-                              <tr style={{ background: "#f9f8f6", borderBottom: "1px solid var(--border)", borderTop: "1px solid #d8d4ce" }}>
-                                <td className="px-4 py-2.5 align-middle" colSpan={4}>
-                                  {order.notes && (
-                                    <span className="text-[12px] font-medium" style={{ color: "var(--text-muted)" }}>{order.notes}</span>
-                                  )}
-                                </td>
-                                {/* الإجمالي → under الحالة */}
-                                <td className="px-4 py-2.5 align-middle text-center">
-                                  <span className="text-[12px] font-semibold" style={{ color: "var(--text-muted)" }}>الإجمالي</span>
-                                </td>
-                                {/* amount → under واتساب */}
-                                <td className="px-2 py-2.5 align-middle text-center">
-                                  <div className="inline-flex items-baseline gap-1" dir="ltr">
-                                    <span className="font-display" style={{ fontSize: 17, fontWeight: 600, color: "var(--text-dark)" }}>{order.total}</span>
-                                    <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>د.أ</span>
+                              {/* Details card row — address + pricing summary */}
+                              <tr style={{ background: "#f7f6f3", borderTop: "1px solid #e0dbd3", borderBottom: "1px solid var(--border)" }}>
+                                <td className="px-4 py-4 align-top" colSpan={7}>
+                                  <div className="flex gap-3">
+
+                                    {/* ── Delivery info ── */}
+                                    <div className="flex-1 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #ede8e0" }}>
+                                      <p className="text-[10px] font-semibold tracking-widest uppercase mb-2.5" style={{ color: "#c0b8a8" }}>
+                                        معلومات التوصيل
+                                      </p>
+                                      <div className="flex flex-col gap-2">
+
+                                        {/* Address */}
+                                        {(order.governorate || order.area || order.street_address) && (
+                                          <div className="flex items-start gap-2">
+                                            <span className="text-[11px] shrink-0 mt-0.5 w-16" style={{ color: "#b0a898" }}>العنوان</span>
+                                            <button
+                                              onClick={() => copyAddress(order)}
+                                              className="flex items-start gap-1.5 text-right transition-opacity hover:opacity-70 flex-1"
+                                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                                            >
+                                              <span className="text-[12px] leading-snug" style={{ color: "#2a2218" }}>
+                                                {[order.governorate, order.area, order.street_address].filter(Boolean).join("، ")}
+                                              </span>
+                                              {copiedAddressId === order.id ? (
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" className="w-3 h-3 shrink-0 mt-0.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                              ) : (
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0 mt-0.5" style={{ color: "#c0b8a8" }}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                              )}
+                                            </button>
+                                          </div>
+                                        )}
+
+                                        {/* Backup phone */}
+                                        {order.customer_phone2 && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[11px] shrink-0 w-16" style={{ color: "#b0a898" }}>رقم احتياطي</span>
+                                            <span className="text-[12px]" dir="ltr" style={{ color: "#4a4238" }}>{order.customer_phone2}</span>
+                                          </div>
+                                        )}
+
+                                        {/* Notes */}
+                                        {order.notes && (
+                                          <div className="flex items-start gap-2">
+                                            <span className="text-[11px] shrink-0 mt-0.5 w-16" style={{ color: "#b0a898" }}>ملاحظات</span>
+                                            <span className="text-[12px] leading-snug" style={{ color: "#7a7068" }}>{order.notes}</span>
+                                          </div>
+                                        )}
+
+                                      </div>
+                                    </div>
+
+                                    {/* ── Price summary ── */}
+                                    <div className="w-44 shrink-0 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #ede8e0" }}>
+                                      <p className="text-[10px] font-semibold tracking-widest uppercase mb-2.5" style={{ color: "#c0b8a8" }}>
+                                        ملخص المبلغ
+                                      </p>
+                                      <div className="flex flex-col gap-1.5">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-[11.5px]" style={{ color: "#a8a090" }}>المنتجات</span>
+                                          <span className="text-[12.5px] tabular-nums" style={{ color: "#2a2218" }}>
+                                            {(order.subtotal ?? (order.total - (order.delivery_fee ?? 0))).toFixed(2)}{" "}
+                                            <span className="text-[10px]" style={{ color: "#b0a898" }}>د.أ</span>
+                                          </span>
+                                        </div>
+                                        {(order.delivery_fee ?? 0) > 0 && (
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-[11.5px]" style={{ color: "#a8a090" }}>التوصيل</span>
+                                            <span className="text-[12.5px] tabular-nums" style={{ color: "#2a2218" }}>
+                                              {(order.delivery_fee ?? 0).toFixed(2)}{" "}
+                                              <span className="text-[10px]" style={{ color: "#b0a898" }}>د.أ</span>
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div
+                                          className="flex justify-between items-baseline pt-2 mt-0.5"
+                                          style={{ borderTop: "1px solid #ede8e0" }}
+                                        >
+                                          <span className="text-[12px] font-semibold" style={{ color: "#4a4238" }}>الإجمالي</span>
+                                          <div className="flex items-baseline gap-1" dir="ltr">
+                                            <span className="font-display text-[17px] font-semibold" style={{ color: "var(--text-dark)" }}>{order.total}</span>
+                                            <span className="text-[10.5px]" style={{ color: "#b0a898" }}>د.أ</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
                                   </div>
                                 </td>
-                                <td />
                               </tr>
                             </>
                           )}
@@ -1005,12 +1083,72 @@ export default function AdminPage() {
                                 </div>
                               </div>
                             ))}
-                            <div className="flex items-center justify-between pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-                              <span className="text-[11px]" style={{ color: "var(--text-light)" }}>الإجمالي</span>
-                              <span className="text-[14px] font-bold" style={{ color: "var(--forest)" }}>{order.total} د.أ</span>
+
+                            {/* Financial breakdown */}
+                            <div className="space-y-1 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px]" style={{ color: "var(--text-light)" }}>المنتجات</span>
+                                <span className="text-[12px] font-medium" style={{ color: "var(--text-dark)" }} dir="ltr">
+                                  {(order.subtotal ?? (order.total - (order.delivery_fee ?? 0))).toFixed(2)} د.أ
+                                </span>
+                              </div>
+                              {(order.delivery_fee ?? 0) > 0 && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px]" style={{ color: "var(--text-light)" }}>التوصيل — {order.governorate}</span>
+                                  <span className="text-[12px] font-medium" style={{ color: "var(--text-dark)" }} dir="ltr">
+                                    {(order.delivery_fee ?? 0).toFixed(2)} د.أ
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between pt-1" style={{ borderTop: "1px dashed var(--border)" }}>
+                                <span className="text-[12px] font-semibold" style={{ color: "var(--text-muted)" }}>الإجمالي الكلي</span>
+                                <span className="text-[14px] font-bold" style={{ color: "var(--forest)" }}>{order.total} د.أ</span>
+                              </div>
                             </div>
-                            {order.notes && (
-                              <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>ملاحظة: {order.notes}</p>
+
+                            {/* Address + phone2 + notes */}
+                            {(order.governorate || order.area || order.street_address || order.customer_phone2 || order.notes) && (
+                              <div className="rounded-lg p-3 space-y-1.5 mt-1" style={{ background: "#f7f8f5", border: "1px solid var(--border)" }}>
+                                {(order.governorate || order.area || order.street_address) && (
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[10px] font-semibold mb-0.5" style={{ color: "var(--text-light)" }}>عنوان التوصيل</p>
+                                      <p className="text-[12px] leading-snug" style={{ color: "var(--text-dark)" }}>
+                                        {[order.governorate, order.area, order.street_address].filter(Boolean).join(" — ")}
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={() => copyAddress(order)}
+                                      className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg transition-colors shrink-0"
+                                      style={{
+                                        background: copiedAddressId === order.id ? "#dcfce7" : "var(--forest-pale)",
+                                        color: copiedAddressId === order.id ? "#16a34a" : "var(--forest-mid)",
+                                        whiteSpace: "nowrap",
+                                        border: "none",
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {copiedAddressId === order.id ? (
+                                        <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>تم</>
+                                      ) : (
+                                        <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>نسخ</>
+                                      )}
+                                    </button>
+                                  </div>
+                                )}
+                                {order.customer_phone2 && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-semibold shrink-0" style={{ color: "var(--text-light)" }}>رقم احتياطي:</span>
+                                    <span className="text-[12px]" dir="ltr" style={{ color: "var(--text-muted)" }}>{order.customer_phone2}</span>
+                                  </div>
+                                )}
+                                {order.notes && (
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-[10px] font-semibold shrink-0 mt-0.5" style={{ color: "var(--text-light)" }}>ملاحظات:</span>
+                                    <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{order.notes}</span>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
@@ -1024,7 +1162,28 @@ export default function AdminPage() {
           )}
 
           {/* ════ Products Tab ════ */}
-          {activeTab === "products" && (
+          {activeTab === "products" && (() => {
+            // Group products by category, sorted by sort_order within each group
+            const knownCatIds = new Set(categories.map(c => c.id));
+            const catMap = new Map<string, Product[]>();
+            for (const p of products) {
+              const key = (p.category_id && knownCatIds.has(p.category_id)) ? p.category_id : "__none__";
+              if (!catMap.has(key)) catMap.set(key, []);
+              catMap.get(key)!.push(p);
+            }
+            const productGroups: { catName: string; products: Product[] }[] = [];
+            for (const cat of categories) {
+              const grp = catMap.get(cat.id);
+              if (grp && grp.length > 0) {
+                productGroups.push({ catName: cat.name_ar, products: [...grp].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) });
+              }
+            }
+            const noCat = catMap.get("__none__");
+            if (noCat && noCat.length > 0) {
+              productGroups.push({ catName: "بدون فئة", products: [...noCat].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) });
+            }
+
+            return (
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-display text-2xl font-semibold" style={{ color: "var(--forest)" }}>
@@ -1048,7 +1207,6 @@ export default function AdminPage() {
                       <colgroup>
                         <col style={{ width: "52px" }} />
                         <col />
-                        <col style={{ width: "130px" }} />
                         <col style={{ width: "80px" }} />
                         <col style={{ width: "90px" }} />
                         <col style={{ width: "70px" }} />
@@ -1056,7 +1214,7 @@ export default function AdminPage() {
                       </colgroup>
                       <thead>
                         <tr style={{ background: "#f9f8f6", borderBottom: "1px solid var(--border)" }}>
-                          {(["صورة", "الاسم", "القسم", "السعر", "الأكثر مبيعًا", "متوفر", "إجراءات"] as const).map(h => {
+                          {(["صورة", "الاسم", "السعر", "الأكثر مبيعًا", "متوفر", "إجراءات"] as const).map(h => {
                             const centered = ["صورة", "الأكثر مبيعًا", "متوفر", "إجراءات"].includes(h);
                             return (
                               <th key={h} className={`px-4 py-3 ${centered ? "text-center" : "text-right"}`} style={thStyle}>{h}</th>
@@ -1064,64 +1222,143 @@ export default function AdminPage() {
                           })}
                         </tr>
                       </thead>
-                      <tbody>
-                        {products.map((product, i) => (
-                          <tr key={product.id}
-                            style={{
-                              background: i % 2 === 0 ? "#fff" : "#fafaf9",
-                              borderBottom: "1px solid var(--border)",
-                            }}>
-                            <td className="px-4 py-3 text-center">
-                              <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0 mx-auto"
-                                style={{ background: "var(--cream)" }}>
-                                {product.image_url ? (
-                                  <Image src={product.image_url} alt={product.name_ar}
-                                    width={40} height={40} className="object-contain w-full h-full p-1" />
-                                ) : (
-                                  <span className="text-xs" style={{ color: "var(--text-light)" }}>
-                                    {product.name_ar.charAt(0)}
-                                  </span>
-                                )}
+                      {productGroups.map(group => (
+                        <tbody key={group.catName}>
+                          {/* Category header row */}
+                          <tr style={{ background: "#f2f4f0" }}>
+                            <td colSpan={6} className="px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[12px] font-semibold" style={{ color: "var(--forest)" }}>{group.catName}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--forest-pale)", color: "var(--forest-mid)" }}>{group.products.length}</span>
                               </div>
                             </td>
-                            <td className="px-4 py-3">
-                              <p className="font-medium line-clamp-2 leading-snug"
-                                style={{ color: "var(--text-dark)", ...tdStyle }}>
-                                {product.name_ar}
-                              </p>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="px-2 py-0.5 rounded-lg whitespace-nowrap"
-                                style={{ background: "var(--forest-pale)", color: "var(--forest-mid)", ...tdStyle }}>
-                                {getCategoryName(product.category_id)}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 font-semibold whitespace-nowrap"
-                              style={{ color: "var(--gold)", ...tdStyle }}>
-                              {fmtPrice(product.price)}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Toggle
-                                value={product.is_best_seller}
-                                onChange={async () => {
-                                  const next = !product.is_best_seller;
-                                  await supabase.from("products").update({ is_best_seller: next }).eq("id", product.id);
-                                  setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_best_seller: next } : p));
-                                }}
-                              />
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Toggle
-                                value={product.in_stock}
-                                onChange={async () => {
-                                  const next = !product.in_stock;
-                                  await supabase.from("products").update({ in_stock: next }).eq("id", product.id);
-                                  setProducts(prev => prev.map(p => p.id === product.id ? { ...p, in_stock: next } : p));
-                                }}
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-center gap-1">
+                          </tr>
+                          {group.products.map((product, i) => (
+                            <tr key={product.id}
+                              style={{
+                                background: i % 2 === 0 ? "#fff" : "#fafaf9",
+                                borderBottom: "1px solid var(--border)",
+                              }}>
+                              <td className="px-4 py-3 text-center">
+                                <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0 mx-auto"
+                                  style={{ background: "var(--cream)" }}>
+                                  {product.image_url ? (
+                                    <Image src={product.image_url} alt={product.name_ar}
+                                      width={40} height={40} className="object-contain w-full h-full p-1" />
+                                  ) : (
+                                    <span className="text-xs" style={{ color: "var(--text-light)" }}>
+                                      {product.name_ar.charAt(0)}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="font-medium line-clamp-2 leading-snug"
+                                  style={{ color: "var(--text-dark)", ...tdStyle }}>
+                                  {product.name_ar}
+                                </p>
+                              </td>
+                              <td className="px-4 py-3 font-semibold whitespace-nowrap"
+                                style={{ color: "var(--gold)", ...tdStyle }}>
+                                {product.price != null ? fmtPrice(product.price) : "—"}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <Toggle
+                                  value={product.is_best_seller}
+                                  onChange={async () => {
+                                    const next = !product.is_best_seller;
+                                    await supabase.from("products").update({ is_best_seller: next }).eq("id", product.id);
+                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_best_seller: next } : p));
+                                  }}
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <Toggle
+                                  value={product.in_stock}
+                                  onChange={async () => {
+                                    const next = !product.in_stock;
+                                    await supabase.from("products").update({ in_stock: next }).eq("id", product.id);
+                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, in_stock: next } : p));
+                                  }}
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-center gap-1">
+                                  <IconBtn title="تعديل" onClick={() => { setEditProduct(product); setShowProductForm(true); }}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                  </IconBtn>
+                                  <IconBtn title="حذف" danger onClick={() => setConfirmDelete({ type: "product", id: product.id, name: product.name_ar })}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+                                    </svg>
+                                  </IconBtn>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      ))}
+                    </table>
+                </div>
+
+                {/* ── Mobile / tablet cards ── */}
+                <div className="md:hidden space-y-5">
+                  {productGroups.map(group => (
+                    <div key={group.catName}>
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <span className="text-[12px] font-semibold" style={{ color: "var(--forest)" }}>{group.catName}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--forest-pale)", color: "var(--forest-mid)" }}>{group.products.length}</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {group.products.map(product => (
+                          <div key={product.id} className="rounded-2xl border overflow-hidden"
+                            style={{ background: "#fff", borderColor: "var(--border)" }}>
+                            {/* Image + info */}
+                            <div className="flex items-start gap-3 p-4">
+                              <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
+                                style={{ background: "var(--cream)" }}>
+                                {product.image_url ? (
+                                  <Image src={product.image_url} alt={product.name_ar} width={56} height={56} className="object-contain w-full h-full p-1" />
+                                ) : (
+                                  <span className="text-sm" style={{ color: "var(--text-light)" }}>{product.name_ar.charAt(0)}</span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-[13px] leading-snug mb-1 line-clamp-2" style={{ color: "var(--text-dark)" }}>
+                                  {product.name_ar}
+                                </p>
+                                {product.price != null && (
+                                  <p className="mt-1.5 font-semibold text-[14px]" style={{ color: "var(--gold)" }}>
+                                    {fmtPrice(product.price)}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {/* Toggles + actions */}
+                            <div className="px-4 py-2.5 flex items-center justify-between"
+                              style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-1.5">
+                                  <Toggle value={product.is_best_seller} onChange={async () => {
+                                    const next = !product.is_best_seller;
+                                    await supabase.from("products").update({ is_best_seller: next }).eq("id", product.id);
+                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_best_seller: next } : p));
+                                  }} />
+                                  <span className="text-[11px]" style={{ color: "var(--text-light)" }}>مميز</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Toggle value={product.in_stock} onChange={async () => {
+                                    const next = !product.in_stock;
+                                    await supabase.from("products").update({ in_stock: next }).eq("id", product.id);
+                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, in_stock: next } : p));
+                                  }} />
+                                  <span className="text-[11px]" style={{ color: "var(--text-light)" }}>متوفر</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
                                 <IconBtn title="تعديل" onClick={() => { setEditProduct(product); setShowProductForm(true); }}>
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
@@ -1134,74 +1371,9 @@ export default function AdminPage() {
                                   </svg>
                                 </IconBtn>
                               </div>
-                            </td>
-                          </tr>
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
-                </div>
-
-                {/* ── Mobile / tablet cards ── */}
-                <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {products.map(product => (
-                    <div key={product.id} className="rounded-2xl border overflow-hidden"
-                      style={{ background: "#fff", borderColor: "var(--border)" }}>
-                      {/* Image + info */}
-                      <div className="flex items-start gap-3 p-4">
-                        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
-                          style={{ background: "var(--cream)" }}>
-                          {product.image_url ? (
-                            <Image src={product.image_url} alt={product.name_ar} width={56} height={56} className="object-contain w-full h-full p-1" />
-                          ) : (
-                            <span className="text-sm" style={{ color: "var(--text-light)" }}>{product.name_ar.charAt(0)}</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-[13px] leading-snug mb-1 line-clamp-2" style={{ color: "var(--text-dark)" }}>
-                            {product.name_ar}
-                          </p>
-                          <span className="text-[11px] px-2 py-0.5 rounded-lg" style={{ background: "var(--forest-pale)", color: "var(--forest-mid)" }}>
-                            {getCategoryName(product.category_id)}
-                          </span>
-                          <p className="mt-1.5 font-semibold text-[14px]" style={{ color: "var(--gold)" }}>
-                            {fmtPrice(product.price)}
-                          </p>
-                        </div>
-                      </div>
-                      {/* Toggles + actions */}
-                      <div className="px-4 py-2.5 flex items-center justify-between"
-                        style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1.5">
-                            <Toggle value={product.is_best_seller} onChange={async () => {
-                              const next = !product.is_best_seller;
-                              await supabase.from("products").update({ is_best_seller: next }).eq("id", product.id);
-                              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_best_seller: next } : p));
-                            }} />
-                            <span className="text-[11px]" style={{ color: "var(--text-light)" }}>مميز</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Toggle value={product.in_stock} onChange={async () => {
-                              const next = !product.in_stock;
-                              await supabase.from("products").update({ in_stock: next }).eq("id", product.id);
-                              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, in_stock: next } : p));
-                            }} />
-                            <span className="text-[11px]" style={{ color: "var(--text-light)" }}>متوفر</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <IconBtn title="تعديل" onClick={() => { setEditProduct(product); setShowProductForm(true); }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                          </IconBtn>
-                          <IconBtn title="حذف" danger onClick={() => setConfirmDelete({ type: "product", id: product.id, name: product.name_ar })}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-                            </svg>
-                          </IconBtn>
-                        </div>
                       </div>
                     </div>
                   ))}
@@ -1209,7 +1381,8 @@ export default function AdminPage() {
                 </>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* ════ Categories Tab ════ */}
           {activeTab === "categories" && (

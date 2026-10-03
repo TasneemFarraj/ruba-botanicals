@@ -50,18 +50,21 @@ export default function ProductDetailPage({
   }, [id]);
 
   useEffect(() => {
-    const el = ctaRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setStickyVisible(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+    const check = () => {
+      const el = ctaRef.current;
+      if (!el) {
+        setStickyVisible(window.scrollY > 200);
+        return;
+      }
+      setStickyVisible(el.getBoundingClientRect().bottom < 0);
+    };
+    window.addEventListener("scroll", check, { passive: true });
+    check();
+    return () => window.removeEventListener("scroll", check);
   }, [product]);
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || !product.price) return;
     for (let i = 0; i < qty; i++) {
       addItem({
         id: product.id,
@@ -75,6 +78,13 @@ export default function ProductDetailPage({
   };
 
   const imgSrc = product?.image_no_bg_url ?? product?.image_url;
+  const hasPrice = (product?.price ?? 0) > 0;
+  const hasDetails = product
+    ? (product.how_to_use_ar != null && product.how_to_use_ar.length > 0) ||
+      !!product.storage_ar ||
+      !!product.expiry_ar ||
+      (product.warnings_ar != null && product.warnings_ar.length > 0)
+    : false;
 
   return (
     <>
@@ -105,6 +115,7 @@ export default function ProductDetailPage({
               <div className="mb-2">
                 <div className="flex items-center gap-3 mb-5 flex-wrap">
                   {product.is_best_seller && <span className="badge badge-bestseller">الأكثر مبيعاً</span>}
+                  {!product.in_stock && <span className="badge" style={{ background: "var(--surface-card)", color: "var(--text-3)", border: "1px solid var(--border-mid)" }}>نفد من المخزون</span>}
                   {product.name_en && (
                     <span className="text-[11px] tracking-widest uppercase" style={{ color: "var(--text-3)", fontFamily: "var(--font-display), Georgia, serif" }}>
                       {product.name_en}
@@ -152,26 +163,27 @@ export default function ProductDetailPage({
                       <p className="text-[10px] tracking-[0.14em] uppercase mb-4" style={{ color: "var(--text-3)" }}>
                         شرح المنتج
                       </p>
-                      <p className="leading-[2.2]" style={{ fontSize: "clamp(14px, 1.4vw, 16px)", color: "var(--text-2)" }}>
+                      <p className="leading-[2.2]" style={{ fontSize: "clamp(14px, 1.4vw, 16px)", color: "var(--text-2)", whiteSpace: "pre-line" }}>
                         {product.description_ar}
                       </p>
                     </div>
                   )}
 
                   {/* Price + CTA — one row, price RIGHT · buttons LEFT */}
+                  {hasPrice && (
                   <div ref={ctaRef} className="flex items-center justify-between gap-4 flex-wrap">
 
                     {/* RIGHT: price + unit + total when qty>1 */}
                     <div className="flex items-baseline gap-2 shrink-0 flex-wrap min-w-0">
                       <span className="font-display" style={{ fontSize: "clamp(1.4rem, 2vw, 1.8rem)", color: "var(--gold)" }}>
-                        {fmtPrice(product.price)}
+                        {fmtPrice(product.price!)}
                       </span>
                       {product.unit && (
                         <span className="text-[11px] tracking-widest" style={{ color: "var(--text-3)" }}>· {product.unit}</span>
                       )}
                       {qty > 1 && (
                         <span className="text-[11px]" style={{ color: "var(--text-3)" }}>
-                          = <span className="font-semibold tabular-nums" style={{ color: "var(--gold)" }}>{fmtPrice(product.price * qty)}</span>
+                          = <span className="font-semibold tabular-nums" style={{ color: "var(--gold)" }}>{fmtPrice(product.price! * qty)}</span>
                         </span>
                       )}
                     </div>
@@ -209,22 +221,24 @@ export default function ProductDetailPage({
                       </div>
                     ) : (
                       <div className="py-2 px-4 text-[11px] tracking-wide" style={{ borderRadius: 999, background: "var(--surface-card)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
-                        غير متوفر حالياً
+                        نفد من المخزون
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
 
               </div>
 
               {/* ── Scroll hint ── */}
+              {hasDetails && (
               <button
                 onClick={() => document.getElementById("details")?.scrollIntoView({ behavior: "smooth" })}
                 className="w-full flex flex-col items-center gap-1.5 pt-8 pb-2 transition-opacity hover:opacity-50"
                 style={{ color: "var(--text-3)" }}
               >
                 <span className="text-[11px] tracking-wide">
-                  نزّلي لتشوفي طريقة الاستخدام وتفاصيل المنتج
+                  طريقة الاستخدام
                 </span>
                 <svg
                   className="animate-bounce"
@@ -239,33 +253,26 @@ export default function ProductDetailPage({
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </button>
+              )}
 
             </section>
 
             {/* ══════════════════════════════════════════
                 Details — usage steps + info
             ══════════════════════════════════════════ */}
+            {hasDetails && (
             <section id="details" style={{ background: "var(--white)" }}>
               <div className="max-w-[1240px] mx-auto px-6 md:px-10 py-10 md:py-16">
                 <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 items-start">
 
-                  {/* Right (RTL): usage steps */}
+                  {/* Right (RTL): usage steps — only when steps exist */}
+                  {product.how_to_use_ar && product.how_to_use_ar.length > 0 && (
                   <div className="flex-1 min-w-0">
 
-                    {/* Section label */}
-                    <p className="text-[11px] tracking-[0.12em] uppercase mb-1" style={{ color: "var(--text-3)" }}>
-                      طريقة الاستخدام
-                    </p>
                     <div className="flex items-center gap-3 mb-10">
                       <h2 className="font-display" style={{ fontSize: "clamp(1.3rem, 2vw, 1.6rem)", color: "var(--text-1)" }}>
-                        كيف تستخدمينه
+                        طريقة الاستخدام
                       </h2>
-                      <span
-                        className="text-[10px] px-2.5 py-0.5 rounded-full"
-                        style={{ background: "var(--gold-pale)", color: "var(--gold)", fontFamily: "var(--font-display), Georgia, serif" }}
-                      >
-                        2–3 مرات أسبوعياً
-                      </span>
                     </div>
 
                     {/* Timeline steps */}
@@ -283,37 +290,34 @@ export default function ProductDetailPage({
                       />
 
                       <div className="space-y-5">
-                        {product.how_to_use_ar && product.how_to_use_ar.length > 0 ? (
-                          product.how_to_use_ar.map((step, i) => (
-                            <div key={i} className="flex gap-4 items-start relative">
-                              <div
-                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium relative z-10"
-                                style={{
-                                  border: "1.5px solid var(--border-str)",
-                                  background: "var(--white)",
-                                  color: "var(--text-3)",
-                                  fontFamily: "var(--font-display), Georgia, serif",
-                                }}
-                              >
-                                {i + 1}
-                              </div>
-                              <div className="pb-1">
-                                <p className="font-semibold text-[15px] mb-1 leading-snug" style={{ color: "var(--text-1)" }}>
-                                  {step.title}
-                                </p>
-                                <p className="text-[14px] leading-[1.8]" style={{ color: "var(--text-2)" }}>
-                                  {step.text}
-                                </p>
-                              </div>
+                        {product.how_to_use_ar.map((step, i) => (
+                          <div key={i} className="flex gap-4 items-start relative">
+                            <div
+                              className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium relative z-10"
+                              style={{
+                                border: "1.5px solid var(--border-str)",
+                                background: "var(--white)",
+                                color: "var(--text-3)",
+                                fontFamily: "var(--font-display), Georgia, serif",
+                              }}
+                            >
+                              {i + 1}
                             </div>
-                          ))
-                        ) : (
-                          <p className="text-[14px]" style={{ color: "var(--text-3)" }}>قريباً</p>
-                        )}
+                            <div className="pb-1">
+                              <p className="font-semibold text-[15px] mb-1 leading-snug" style={{ color: "var(--text-1)" }}>
+                                {step.title}
+                              </p>
+                              <p className="text-[14px] leading-[1.8]" style={{ color: "var(--text-2)" }}>
+                                {step.text}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
                   </div>
+                  )}
 
                   {/* Left (RTL): storage + warnings — flat, minimal */}
                   <div className="w-full lg:w-[300px] shrink-0">
@@ -370,6 +374,7 @@ export default function ProductDetailPage({
                 </div>
               </div>
             </section>
+            )}
 
             {/* ══════════════════════════════════════════
                 Related products
@@ -410,7 +415,7 @@ export default function ProductDetailPage({
         )}
 
         {/* ── Sticky bottom bar — appears when CTA scrolls out of view ── */}
-        {product && (
+        {product && hasPrice && (
           <div
             dir="rtl"
             style={{
@@ -431,43 +436,51 @@ export default function ProductDetailPage({
                 {product.name_ar}
               </p>
               <span className="font-display shrink-0 text-[14px]" style={{ color: "var(--gold)" }}>
-                {fmtPrice(product.price)}
+                {fmtPrice(product.price!)}
               </span>
               {qty > 1 && (
                 <span className="text-[11px] shrink-0" style={{ color: "var(--text-3)" }}>
-                  = <span className="font-semibold tabular-nums" style={{ color: "var(--gold)" }}>{fmtPrice(product.price * qty)}</span>
+                  = <span className="font-semibold tabular-nums" style={{ color: "var(--gold)" }}>{fmtPrice(product.price! * qty)}</span>
                 </span>
               )}
 
-              {/* Qty pill — sticky */}
-              <div className="shrink-0 flex items-center" style={{ border: "1px solid var(--border-mid)", borderRadius: 999, overflow: "hidden", height: 32 }}>
-                <QtyBtn onClick={() => setQty((q) => Math.max(1, q - 1))} dim={qty === 1} size={32}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 9, height: 9 }}><path d="M5 12h14" /></svg>
-                </QtyBtn>
-                <span className="text-[12px] tabular-nums flex items-center justify-center" style={{ width: 26, height: 32, borderInline: "1px solid var(--border)", color: "var(--text-1)" }}>
-                  {qty}
-                </span>
-                <QtyBtn onClick={() => setQty((q) => q + 1)} size={32}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 9, height: 9 }}><path d="M12 5v14M5 12h14" /></svg>
-                </QtyBtn>
-              </div>
+              {product.in_stock ? (
+                <>
+                  {/* Qty pill — sticky */}
+                  <div className="shrink-0 flex items-center" style={{ border: "1px solid var(--border-mid)", borderRadius: 999, overflow: "hidden", height: 32 }}>
+                    <QtyBtn onClick={() => setQty((q) => Math.max(1, q - 1))} dim={qty === 1} size={32}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 9, height: 9 }}><path d="M5 12h14" /></svg>
+                    </QtyBtn>
+                    <span className="text-[12px] tabular-nums flex items-center justify-center" style={{ width: 26, height: 32, borderInline: "1px solid var(--border)", color: "var(--text-1)" }}>
+                      {qty}
+                    </span>
+                    <QtyBtn onClick={() => setQty((q) => q + 1)} size={32}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 9, height: 9 }}><path d="M12 5v14M5 12h14" /></svg>
+                    </QtyBtn>
+                  </div>
 
-              {/* Add to cart — sticky */}
-              <button
-                onClick={handleAddToCart}
-                className="shrink-0 flex items-center gap-1.5 text-[11.5px] font-medium tracking-wide transition-opacity active:scale-[0.97]"
-                style={{
-                  background: added ? "var(--forest-mid)" : "var(--forest)",
-                  color: "#fff",
-                  height: 32,
-                  borderRadius: 999,
-                  paddingInline: 14,
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.84"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
-              >
-                {added ? "تمت الإضافة ✓" : "أضيفي للسلة"}
-              </button>
+                  {/* Add to cart — sticky */}
+                  <button
+                    onClick={handleAddToCart}
+                    className="shrink-0 flex items-center gap-1.5 text-[11.5px] font-medium tracking-wide transition-opacity active:scale-[0.97]"
+                    style={{
+                      background: added ? "var(--forest-mid)" : "var(--forest)",
+                      color: "#fff",
+                      height: 32,
+                      borderRadius: 999,
+                      paddingInline: 14,
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.84"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+                  >
+                    {added ? "تمت الإضافة ✓" : "أضيفي للسلة"}
+                  </button>
+                </>
+              ) : (
+                <div className="shrink-0 text-[11px] px-3 py-1" style={{ borderRadius: 999, background: "var(--surface-card)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
+                  نفد من المخزون
+                </div>
+              )}
             </div>
           </div>
         )}

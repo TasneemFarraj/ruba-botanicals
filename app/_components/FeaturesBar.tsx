@@ -61,7 +61,7 @@ const FEATURES = [
       </svg>
     ),
     title: "رد فوري",
-    subtitle: "واتساب 7 أيام",
+    subtitle: "واتساب خلال 24 ساعة",
   },
 ];
 

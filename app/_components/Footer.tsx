@@ -27,7 +27,7 @@ const NAV_LINKS = [
 ];
 
 const INFO_LINKS = [
-  { label: "من ربى؟", href: "/#about" },
+  { label: "من ربى", href: "/#about" },
   { label: "تواصلي معنا", href: "/#contact" },
   { label: "سياسة الخصوصية", href: "/#privacy" },
 ];
@@ -67,17 +67,32 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div
-              className="font-display text-xl mb-3"
-              style={{ color: "#fff" }}
+              className="mb-4"
+              style={{
+                fontFamily: "var(--font-brand), 'Cormorant Garamond', Georgia, serif",
+                fontSize: "1.5rem",
+                fontWeight: 300,
+                letterSpacing: "0.18em",
+                color: "#fff",
+                direction: "ltr",
+                textAlign: "right",
+              }}
             >
-              ربى للحناء
+              Ruba Botanical
             </div>
             <p
-              className="text-sm leading-relaxed mb-6"
-              style={{ color: "rgba(255,255,255,0.5)" }}
+              className="text-sm mb-6"
+              style={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.9 }}
             >
-              حناء طبيعية أردنية فاخرة — نقش، شعر، أعشاب ومناسبات. مصنوعة بحب من
-              قلب عمّان.
+              من الطبيعة ..
+              <br />
+              تبدأ العناية الآمنة، ويزهر الجمال
+              <br />
+              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.78rem" }}>
+                حناء، أعشاب ومكوّنات طبيعية،
+                <br />
+                مختارة بعناية ومدروسة بثقة..
+              </span>
             </p>
             <div className="flex items-center gap-2.5">
               {SOCIAL.map(({ icon, href, label }) => (
@@ -152,7 +167,7 @@ export default function Footer() {
               className="text-sm mb-5"
               style={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.8 }}
             >
-              جاهزون للرد على استفساراتك في أي وقت — تحدثي معنا مباشرة.
+              جاهزون للرد على استفساراتك في أي وقت، تحدثي معنا مباشرة.
             </p>
             <a
               href="https://wa.me/962789795740"
@@ -176,14 +191,15 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-6 flex flex-col md:flex-row items-center justify-between gap-3">
         <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-          © {new Date().getFullYear()} ربى للحناء — جميع الحقوق محفوظة
+          © {new Date().getFullYear()} Ruba Botanical — جميع الحقوق محفوظة
         </p>
         <a
           href="https://wa.me/962789795740"
           target="_blank"
           rel="noopener noreferrer"
+          dir="ltr"
           className="text-xs transition-colors"
-          style={{ color: "rgba(255,255,255,0.35)" }}
+          style={{ color: "rgba(255,255,255,0.35)", unicodeBidi: "embed" }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLElement).style.color =
               "rgba(255,255,255,0.7)";

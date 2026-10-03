@@ -12,7 +12,7 @@ export interface Product {
   name_ar: string;
   name_en?: string;
   description_ar?: string;
-  price: number;
+  price?: number;
   unit?: string;
   image_url?: string;
   image_no_bg_url?: string;
@@ -48,7 +48,13 @@ export interface Order {
   id: string;
   customer_name: string;
   customer_phone: string;
+  customer_phone2?: string;
+  governorate?: string;
+  area?: string;
+  street_address?: string;
   items: CartItem[];
+  subtotal?: number;
+  delivery_fee?: number;
   total: number;
   notes?: string;
   status: "pending" | "confirmed" | "done";
