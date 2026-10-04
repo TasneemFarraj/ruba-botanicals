@@ -181,7 +181,7 @@ export default function AboutRuba() {
               src="/images/ruba-logo.png"
               alt="ربى فرّاج"
               fill
-              className="object-contain"
+              className="brand-logo object-contain"
               style={{ mixBlendMode: "multiply" }}
               sizes="300px"
             />

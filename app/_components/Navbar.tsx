@@ -144,7 +144,7 @@ export default function Navbar() {
             {logoError ? (
               <span className="font-display" style={{ fontSize: 18, color: "var(--forest)" }}>ربى فرّاج</span>
             ) : (
-              <Image src="/images/ruba-logo.png" alt="ربى فرّاج" width={110} height={44} priority className="h-11 w-auto" onError={() => setLogoError(true)} />
+              <Image src="/images/ruba-logo.png" alt="ربى فرّاج" width={110} height={44} priority className="brand-logo h-11 w-auto" onError={() => setLogoError(true)} />
             )}
           </button>
 
@@ -412,7 +412,7 @@ export default function Navbar() {
           {logoError ? (
             <span className="font-display" style={{ fontSize: 16, color: "var(--forest)" }}>ربى فرّاج</span>
           ) : (
-            <Image src="/images/ruba-logo.png" alt="ربى فرّاج" width={90} height={36} className="h-9 w-auto" onError={() => setLogoError(true)} />
+            <Image src="/images/ruba-logo.png" alt="ربى فرّاج" width={90} height={36} className="brand-logo h-9 w-auto" onError={() => setLogoError(true)} />
           )}
         </div>
 

@@ -363,3 +363,10 @@ html.lenis, html.lenis body { height: auto; }
 .badge-amber      { background: #fef9ec; color: #92680a; }
 .badge-blue       { background: #eff6ff; color: #1d4ed8; }
 .badge-bestseller { background: var(--forest-pale); color: var(--forest-mid); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+
+/* Logo is black ink on transparent — flip to light ink in dark mode.
+   hue-rotate keeps the grey-green accent marks green after inversion. */
+[data-theme="dark"] .brand-logo {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95);
+  mix-blend-mode: normal !important;
+}
