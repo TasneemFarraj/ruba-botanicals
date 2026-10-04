@@ -11,13 +11,14 @@ import type { User } from "@supabase/supabase-js";
 import EmptyState from "../_components/shared/EmptyState";
 
 type Tab = "orders" | "products" | "categories";
-type OrdersView = "active" | "archive";
+type OrdersView = "active" | "postponed" | "archive";
 
 /* ─── Status config ─── */
 const STATUS_CONFIG: Record<Order["status"], { label: string; bg: string; color: string }> = {
-  pending: { label: "جديد", bg: "#fef3c7", color: "#92400e" },
-  ready:   { label: "جاهز", bg: "#dbeafe", color: "#1e40af" },
-  done:    { label: "تم",   bg: "#d1fae5", color: "#065f46" },
+  pending:   { label: "جديد",  bg: "#fef3c7", color: "#92400e" },
+  ready:     { label: "جاهز",  bg: "#dbeafe", color: "#1e40af" },
+  postponed: { label: "مؤجلة", bg: "#ffedd5", color: "#9a3412" },
+  done:      { label: "تم",    bg: "#d1fae5", color: "#065f46" },
 };
 
 const STATUS_OPTIONS: { value: Order["status"]; label: string; icon: React.ReactNode }[] = [
@@ -30,10 +31,17 @@ const STATUS_OPTIONS: { value: Order["status"]; label: string; icon: React.React
     icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" /></svg>),
   },
   {
+    value: "postponed", label: "مؤجل",
+    icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>),
+  },
+  {
     value: "done", label: "تم",
     icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" /></svg>),
   },
 ];
+
+/* Postponed orders can only go back to "جديد" or forward to "تم" */
+const POSTPONED_OPTIONS = STATUS_OPTIONS.filter(o => o.value !== "ready");
 
 /* ─── Status badge ─── */
 function StatusBadge({ status }: { status: Order["status"] }) {
@@ -48,7 +56,7 @@ function StatusBadge({ status }: { status: Order["status"] }) {
 }
 
 /* ─── Copy full order (to send to the customer / delivery) ─── */
-const ORDER_COPY_TITLE = "🌿 Ruba Botanicals | ربى فرّاح 🌿";
+const ORDER_COPY_TITLE = "🌿 Ruba Botanicals | ربى فرّاج 🌿";
 
 /* Lines starting with BOLD: <b> in the HTML copy (Word / Docs), bold Unicode digits in plain text (WhatsApp) */
 const BOLD = "\u0000b";
@@ -246,23 +254,32 @@ function ConfirmDialog({
   );
 }
 
-/* ─── Confirm archive dialog ─── */
-function ConfirmArchiveDialog({
-  name, onConfirm, onCancel, loading,
-}: { name: string; onConfirm: () => void; onCancel: () => void; loading: boolean }) {
+/* ─── Confirm status move (archive / restore) ─── */
+type StatusMove = { order: Order; to: "done" | "pending" };
+
+function ConfirmMoveDialog({
+  move, onConfirm, onCancel, loading,
+}: { move: StatusMove; onConfirm: () => void; onCancel: () => void; loading: boolean }) {
+  const toArchive = move.to === "done";
+  const tint = STATUS_CONFIG[move.to];
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
       <div onClick={onCancel} className="absolute inset-0" style={{ background: "rgba(28,58,26,0.45)", backdropFilter: "blur(4px)" }} />
       <div className="relative w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden" style={{ background: "#fff" }}>
         <div className="p-6">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: "#d1fae5" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#065f46" strokeWidth="1.8" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4M5 7v11a2 2 0 002 2h10a2 2 0 002-2V7M9 4h6M10 12h4" />
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: tint.bg }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={tint.color} strokeWidth="1.8" className="w-5 h-5">
+              {toArchive
+                ? <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4M5 7v11a2 2 0 002 2h10a2 2 0 002-2V7M9 4h6M10 12h4" />
+                : <path strokeLinecap="round" strokeLinejoin="round" d="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />}
             </svg>
           </div>
-          <h3 className="font-display text-[18px] mb-1" style={{ color: "#1a2810" }}>هل تريدين نقل هذا الطلب للأرشيف؟</h3>
+          <h3 className="font-display text-[18px] mb-1" style={{ color: "#1a2810" }}>
+            {toArchive ? "هل تريدين نقل هذا الطلب للأرشيف؟" : "إرجاع هذا الطلب للطلبات النشطة؟"}
+          </h3>
           <p className="text-[13px] mb-5" style={{ color: "var(--text-muted)" }}>
-            طلب <span className="font-semibold mx-1" style={{ color: "#1a2810" }}>{name.trim()}</span> سيُنقل إلى الأرشيف بحالة &quot;تم&quot;.
+            طلب <span className="font-semibold mx-1" style={{ color: "#1a2810" }}>{move.order.customer_name.trim()}</span>
+            {toArchive ? " سيُنقل إلى الأرشيف بحالة \"تم\"." : " سيرجع إلى الطلبات بحالة \"جديد\"."}
           </p>
           <div className="flex gap-2">
             <button
@@ -278,7 +295,7 @@ function ConfirmArchiveDialog({
               className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-opacity disabled:opacity-50"
               style={{ background: "var(--forest-bg)", color: "#fff" }}
             >
-              {loading ? "جاري النقل..." : "تأكيد"}
+              {loading ? "جاري النقل..." : toArchive ? "تأكيد" : "إرجاع"}
             </button>
           </div>
         </div>
@@ -490,8 +507,8 @@ export default function AdminPage() {
   const [expandedOrder,   setExpandedOrder]   = useState<string | null>(null);
   const [copiedAddressId, setCopiedAddressId] = useState<string | null>(null);
   const [ordersView,      setOrdersView]      = useState<OrdersView>("active");
-  const [confirmArchive,  setConfirmArchive]  = useState<Order | null>(null);
-  const [archiveLoading,  setArchiveLoading]  = useState(false);
+  const [confirmMove,     setConfirmMove]     = useState<StatusMove | null>(null);
+  const [moveLoading,     setMoveLoading]     = useState(false);
 
   /* Products */
   const [products,        setProducts]        = useState<Product[]>([]);
@@ -585,21 +602,24 @@ export default function AdminPage() {
   };
 
   /* "تم" moves the order to the archive — ask first */
-  const handleStatusClick = (order: Order, status: Order["status"]) => {
+  const handleStatusClick = async (order: Order, status: Order["status"]) => {
     if (status === order.status) return;
-    if (status === "done") { setConfirmArchive(order); return; }
-    updateOrderStatus(order.id, status);
+    if (status === "done") { setConfirmMove({ order, to: "done" }); return; }
+    const ok = await updateOrderStatus(order.id, status);
+    if (ok && status === "postponed") setToast({ message: "تم نقل الطلب للمؤجلة", type: "success" });
+    if (ok && order.status === "postponed") setToast({ message: "تم إرجاع الطلب للطلبات", type: "success" });
   };
 
-  const handleConfirmArchive = async () => {
-    if (!confirmArchive) return;
-    setArchiveLoading(true);
-    const ok = await updateOrderStatus(confirmArchive.id, "done");
-    setArchiveLoading(false);
-    setConfirmArchive(null);
+  const handleConfirmMove = async () => {
+    if (!confirmMove) return;
+    const { order, to } = confirmMove;
+    setMoveLoading(true);
+    const ok = await updateOrderStatus(order.id, to);
+    setMoveLoading(false);
+    setConfirmMove(null);
     if (ok) {
-      if (expandedOrder === confirmArchive.id) setExpandedOrder(null);
-      setToast({ message: "تم نقل الطلب للأرشيف", type: "success" });
+      if (expandedOrder === order.id) setExpandedOrder(null);
+      setToast({ message: to === "done" ? "تم نقل الطلب للأرشيف" : "تم إرجاع الطلب للطلبات", type: "success" });
     }
   };
 
@@ -658,8 +678,11 @@ export default function AdminPage() {
 
   const pendingCount = orders.filter(o => o.status === "pending").length;
 
-  // Anything not "done" counts as active, so legacy statuses never disappear from view
-  const activeOrders   = orders.filter(o => o.status !== "done");
+  // Anything not postponed/done counts as active, so legacy statuses never disappear from view
+  const activeOrders    = orders.filter(o => o.status !== "done" && o.status !== "postponed");
+  const postponedOrders = orders.filter(o => o.status === "postponed");
+  const listOrders      = ordersView === "postponed" ? postponedOrders : activeOrders;
+  const listOptions     = ordersView === "postponed" ? POSTPONED_OPTIONS : STATUS_OPTIONS;
   const archivedOrders = orders
     .filter(o => o.status === "done")
     .sort((a, b) => (b.completed_at ?? b.created_at).localeCompare(a.completed_at ?? a.created_at));
@@ -878,16 +901,17 @@ export default function AdminPage() {
                 ))}
               </div>
 
-              {/* Active / archive tabs */}
-              <div className="flex gap-1 mb-5 border-b" style={{ borderColor: "var(--border)" }}>
+              {/* Active / postponed / archive tabs */}
+              <div className="flex gap-1 mb-5 border-b overflow-x-auto" style={{ borderColor: "var(--border)" }}>
                 {([
-                  { id: "active"  as OrdersView, label: "الطلبات", count: activeOrders.length },
-                  { id: "archive" as OrdersView, label: "الأرشيف", count: archivedOrders.length },
+                  { id: "active"    as OrdersView, label: "الطلبات", count: activeOrders.length },
+                  { id: "postponed" as OrdersView, label: "مؤجلة",   count: postponedOrders.length },
+                  { id: "archive"   as OrdersView, label: "الأرشيف", count: archivedOrders.length },
                 ]).map(t => {
                   const active = ordersView === t.id;
                   return (
                     <button key={t.id} onClick={() => { setOrdersView(t.id); setExpandedOrder(null); }}
-                      className="flex items-center gap-2 px-4 py-2.5 text-[13px] -mb-px transition-colors"
+                      className="flex items-center gap-2 px-4 py-2.5 text-[13px] -mb-px transition-colors whitespace-nowrap"
                       style={{
                         color: active ? "var(--forest-bg)" : "var(--text-muted)",
                         fontWeight: active ? 600 : 400,
@@ -903,7 +927,7 @@ export default function AdminPage() {
                 })}
               </div>
 
-              {/* ── Archive (read-only) ── */}
+              {/* ── Archive (read-only, can be restored) ── */}
               {ordersView === "archive" && (ordersLoading ? <Spinner /> : archivedOrders.length === 0 ? (
                 <EmptyState title="الأرشيف فارغ" subtitle="الطلبات المكتملة ستظهر هنا" />
               ) : (
@@ -946,9 +970,30 @@ export default function AdminPage() {
                                 <span dir="ltr" style={{ color: "var(--text-muted)" }}>{item.price.toFixed(2)} × {item.quantity}</span>
                               </div>
                             ))}
+                            <div className="space-y-0.5 pt-1.5 mt-1 text-[11.5px]" style={{ borderTop: "1px solid var(--border)" }}>
+                              <div className="flex justify-between">
+                                <span style={{ color: "var(--text-light)" }}>المنتجات</span>
+                                <span dir="ltr" style={{ color: "var(--text-dark)" }}>{(order.subtotal ?? (order.total - (order.delivery_fee ?? 0))).toFixed(2)} د.أ</span>
+                              </div>
+                              {(order.delivery_fee ?? 0) > 0 && (
+                                <div className="flex justify-between">
+                                  <span style={{ color: "var(--text-light)" }}>التوصيل</span>
+                                  <span dir="ltr" style={{ color: "var(--text-dark)" }}>{(order.delivery_fee ?? 0).toFixed(2)} د.أ</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between font-semibold">
+                                <span style={{ color: "var(--text-muted)" }}>الإجمالي</span>
+                                <span dir="ltr" style={{ color: "var(--forest)" }}>{order.total} د.أ</span>
+                              </div>
+                            </div>
                             {(order.governorate || order.area || order.street_address) && (
                               <p className="text-[11px] pt-1.5" style={{ color: "var(--text-muted)" }}>
                                 {[order.governorate, order.area, order.street_address].filter(Boolean).join("، ")}
+                              </p>
+                            )}
+                            {order.customer_phone2 && (
+                              <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                                رقم احتياطي: <span dir="ltr">{order.customer_phone2}</span>
                               </p>
                             )}
                             {order.completed_at && (
@@ -958,15 +1003,31 @@ export default function AdminPage() {
                             )}
                           </div>
                         )}
+
+                        {/* Restore to active orders */}
+                        <div className="px-4 py-2 flex justify-end" style={{ borderTop: "1px solid var(--border)", background: "#fcfcfb" }}>
+                          <button
+                            onClick={() => setConfirmMove({ order, to: "pending" })}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-opacity hover:opacity-70"
+                            style={{ background: STATUS_CONFIG.pending.bg, color: STATUS_CONFIG.pending.color }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
+                            </svg>
+                            إرجاع للطلبات
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               ))}
 
-              {/* ── Active orders table ── */}
-              {ordersView === "active" && (ordersLoading ? <Spinner /> : activeOrders.length === 0 ? (
-                <EmptyState title="لا توجد طلبات" subtitle="ستظهر الطلبات هنا فور وصولها" />
+              {/* ── Active / postponed orders (collapsed rows, click to expand) ── */}
+              {ordersView !== "archive" && (ordersLoading ? <Spinner /> : listOrders.length === 0 ? (
+                ordersView === "postponed"
+                  ? <EmptyState title="لا توجد طلبات مؤجلة" subtitle="الطلبات المؤجلة ستظهر هنا" />
+                  : <EmptyState title="لا توجد طلبات" subtitle="ستظهر الطلبات هنا فور وصولها" />
               ) : (
                 <>
                 <div className="hidden md:block rounded-2xl overflow-x-auto" style={{ border: "1px solid var(--border)" }}>
@@ -991,7 +1052,7 @@ export default function AdminPage() {
                       </tr>
                     </thead>
 
-                    {activeOrders.map((order) => {
+                    {listOrders.map((order) => {
                       const isExpanded = expandedOrder === order.id;
                       const [datePart, timePart] = formatDate(order.created_at).split(", ");
 
@@ -1049,7 +1110,7 @@ export default function AdminPage() {
                             {/* Status — segmented buttons with icons */}
                             <td className="px-4 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                               <div className="inline-flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)", fontSize: 11 }}>
-                                {STATUS_OPTIONS.map((opt, idx) => {
+                                {listOptions.map((opt, idx) => {
                                   const isActive = order.status === opt.value;
                                   return (
                                     <button
@@ -1247,7 +1308,7 @@ export default function AdminPage() {
 
                 {/* ── Mobile / tablet cards ── */}
                 <div className="md:hidden space-y-3">
-                  {activeOrders.map(order => {
+                  {listOrders.map(order => {
                     const isExpanded = expandedOrder === order.id;
                     const [datePart, timePart] = formatDate(order.created_at).split(", ");
                     return (
@@ -1288,7 +1349,7 @@ export default function AdminPage() {
                           style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
                           <div className="inline-flex rounded-xl overflow-hidden"
                             style={{ border: "1px solid var(--border)", fontSize: 11 }}>
-                            {STATUS_OPTIONS.map((opt, idx) => {
+                            {listOptions.map((opt, idx) => {
                               const isActive = order.status === opt.value;
                               return (
                                 <button key={opt.value}
@@ -1805,13 +1866,13 @@ export default function AdminPage() {
         />
       )}
 
-      {/* ── Confirm archive dialog ── */}
-      {confirmArchive && (
-        <ConfirmArchiveDialog
-          name={confirmArchive.customer_name}
-          loading={archiveLoading}
-          onConfirm={handleConfirmArchive}
-          onCancel={() => setConfirmArchive(null)}
+      {/* ── Confirm archive / restore dialog ── */}
+      {confirmMove && (
+        <ConfirmMoveDialog
+          move={confirmMove}
+          loading={moveLoading}
+          onConfirm={handleConfirmMove}
+          onCancel={() => setConfirmMove(null)}
         />
       )}
 

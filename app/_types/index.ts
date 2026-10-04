@@ -57,7 +57,7 @@ export interface Order {
   delivery_fee?: number;
   total: number;
   notes?: string;
-  status: "pending" | "ready" | "done";
+  status: "pending" | "ready" | "postponed" | "done";
   created_at: string;
   completed_at?: string | null;
 }
