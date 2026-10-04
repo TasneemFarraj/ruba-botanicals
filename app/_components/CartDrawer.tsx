@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -41,9 +40,9 @@ const STEP_LABELS: Record<Step, string> = {
 };
 
 /* ── Field style tokens ────────────────────────────────────────────────── */
-const iSt  = { background: "#ffffff", border: "1px solid #dde6d8", boxShadow: "none",                     color: "#1a2810" };
-const iStF = { background: "#ffffff", border: "1.5px solid #5c8f4e", boxShadow: "none",                    color: "#1a2810" };
-const iCl  = "w-full px-3 py-[8px] rounded-lg text-[13px] outline-none transition-all duration-150 placeholder:text-[#c8d0c3]";
+const iSt  = { background: "var(--white)", border: "1px solid var(--border-mid)", boxShadow: "none",                     color: "var(--text-1)" };
+const iStF = { background: "var(--white)", border: "1.5px solid var(--forest-light)", boxShadow: "none",                    color: "var(--text-1)" };
+const iCl  = "w-full px-3 py-[8px] rounded-lg text-[13px] outline-none transition-all duration-150 placeholder:text-[var(--text-3)]";
 
 /* ── Form state ────────────────────────────────────────────────────────── */
 interface OrderForm {
@@ -118,7 +117,7 @@ export default function CartDrawer() {
   const total       = subtotal + deliveryFee;
 
   const formValid = !!(
-    form.name.trim() && form.phone.trim() &&
+    form.name.trim() && form.phone.trim() && form.phone2.trim() &&
     form.governorate  && form.area.trim() && form.street.trim()
   );
 
@@ -148,7 +147,7 @@ try {
       await saveOrder({
         customer_name:   form.name.trim(),
         customer_phone:  form.phone.trim(),
-        customer_phone2: form.phone2.trim() || undefined,
+        customer_phone2: form.phone2.trim(),
         governorate:     form.governorate,
         area:            form.area.trim(),
         street_address:  form.street.trim(),
@@ -197,22 +196,21 @@ try {
       {/*
         DRAWER — flex column: header + footer shrink-0 (never scroll),
         only the middle content area scrolls.
-        NOTE: transform on this element makes position:fixed children
-        relative to this element, so GovPicker uses createPortal.
+        GovPicker renders its list absolutely inside the scroll area
       */}
       <div
         dir="rtl"
         className="fixed top-0 right-0 h-full z-[60] flex flex-col"
         style={{
           width:      "min(400px, 100vw)",
-          background: "#fff",
+          background: "var(--white)",
           boxShadow:  "-2px 0 0 rgba(28,58,26,0.05), -20px 0 60px rgba(0,0,0,0.12)",
           transition: "transform 400ms cubic-bezier(0.32,0,0.15,1)",
           transform:  isOpen ? "translateX(0)" : "translateX(100%)",
         }}
       >
         {/* ── Header (shrink-0, never scrolls) ────────────────────── */}
-        <div className="shrink-0 bg-white" style={{ borderBottom: "1px solid #f2f2f2" }}>
+        <div className="shrink-0 bg-[var(--white)]" style={{ borderBottom: "1px solid var(--border)" }}>
           <div className="flex items-center gap-3 px-5" style={{ height: 56 }}>
 
             {/* Back button / placeholder */}
@@ -221,7 +219,7 @@ try {
                 <button
                   onClick={() => { setStep(s => (s - 1) as Step); setError(""); }}
                   className="w-[34px] h-[34px] flex items-center justify-center rounded-full transition-colors"
-                  style={{ color: "#999", background: "#f5f5f5" }}
+                  style={{ color: "var(--text-2)", background: "var(--surface-alt)" }}
                 >
                   <ArrowRight size={15} />
                 </button>
@@ -230,7 +228,7 @@ try {
 
             <h2
               className="flex-1 text-center text-[15.5px] font-bold"
-              style={{ color: "#1a2810", fontFamily: "var(--font-display, serif)" }}
+              style={{ color: "var(--text-1)", fontFamily: "var(--font-display, serif)" }}
             >
               {done ? "تم استلام طلبك" : STEP_LABELS[step]}
             </h2>
@@ -238,7 +236,7 @@ try {
             <button
               onClick={handleClose}
               className="w-[34px] h-[34px] flex items-center justify-center rounded-full transition-colors"
-              style={{ color: "#bbb", background: "#f5f5f5" }}
+              style={{ color: "var(--text-3)", background: "var(--surface-alt)" }}
             >
               <X size={14} />
             </button>
@@ -252,7 +250,7 @@ try {
                   width:        step === i ? 18 : 5,
                   height:       4,
                   borderRadius: 99,
-                  background:   i <= step ? "#1c3a1a" : "#e8e8e8",
+                  background:   i <= step ? "var(--forest)" : "var(--border-mid)",
                   opacity:      i < step ? 0.3 : 1,
                   transition:   "all 0.3s ease",
                 }} />
@@ -373,12 +371,12 @@ try {
 
                 {/* Message */}
                 <div className="text-center" style={{ animation: "rb-fade-up 0.5s 0.6s ease both", opacity: 0 }}>
-                  <p className="text-[21px] font-bold mb-2" style={{ color: "#1a2810", fontFamily: "var(--font-display, serif)" }}>
+                  <p className="text-[21px] font-bold mb-2" style={{ color: "var(--text-1)", fontFamily: "var(--font-display, serif)" }}>
                     تم استلام طلبك
                   </p>
-                  <p className="text-[13px] leading-[1.95]" style={{ color: "#6a8060" }}>
+                  <p className="text-[13px] leading-[1.95]" style={{ color: "var(--text-2)" }}>
                     سيصل طلبك خلال{" "}
-                    <span className="font-semibold" style={{ color: "#1a4010" }}>3 إلى 5 أيام عمل</span>
+                    <span className="font-semibold" style={{ color: "var(--forest)" }}>3 إلى 5 أيام عمل</span>
                     <br />
                     سيتواصل معك مندوب التوصيل قبل الوصول
                   </p>
@@ -416,13 +414,13 @@ try {
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
                   <div
                     className="w-16 h-16 rounded-full flex items-center justify-center"
-                    style={{ background: "#f5f5f0" }}
+                    style={{ background: "var(--surface-card)" }}
                   >
-                    <BranchIcon size={28} color="#c8d4c0" />
+                    <BranchIcon size={28} color="var(--text-3)" />
                   </div>
                   <div className="text-center">
-                    <p className="text-[14px] font-semibold mb-1" style={{ color: "#9aaa90" }}>سلّتك فارغة</p>
-                    <p className="text-[12px]" style={{ color: "#c4cfc0" }}>أضيفي منتجاتك المفضلة</p>
+                    <p className="text-[14px] font-semibold mb-1" style={{ color: "var(--text-3)" }}>سلّتك فارغة</p>
+                    <p className="text-[12px]" style={{ color: "var(--text-3)" }}>أضيفي منتجاتك المفضلة</p>
                   </div>
                   <button
                     onClick={handleClose}
@@ -467,11 +465,11 @@ try {
               </AField>
 
               <AField label="رقم الواتساب" required>
-                <AInput value={form.phone} onChange={setPhone("phone")} placeholder="+9627XXXXXXXX" type="tel" ltr />
+                <AInput value={form.phone} onChange={setPhone("phone")} placeholder="078*******" type="tel" ltr />
               </AField>
 
-              <AField label="رقم احتياطي">
-                <AInput value={form.phone2} onChange={setPhone("phone2")} placeholder="+9627XXXXXXXX" type="tel" ltr />
+              <AField label="رقم احتياطي" required>
+                <AInput value={form.phone2} onChange={setPhone("phone2")} placeholder="078*******" type="tel" ltr />
               </AField>
 
               <SectionLabel topGap>عنوان التوصيل</SectionLabel>
@@ -500,18 +498,18 @@ try {
             <div className="px-5 pt-3 pb-4 space-y-4">
 
               <SectionLabel>المنتجات</SectionLabel>
-              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #eaede8" }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
                 {items.map((item, i) => (
                   <div key={item.id} className="flex items-center gap-3 px-4 py-3"
-                    style={{ borderTop: i > 0 ? "1px solid #f3f3f3" : "none", background: i % 2 === 0 ? "#fff" : "#fafaf9" }}>
+                    style={{ borderTop: i > 0 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--white)" : "var(--surface-card)" }}>
                     {item.image_url && (
-                      <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: "#f5f5f3" }}>
+                      <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: "var(--surface-card)" }}>
                         <Image src={item.image_url} alt={item.name_ar} fill className="object-contain p-1" />
                       </div>
                     )}
-                    <p className="flex-1 text-[13px] font-medium line-clamp-1" style={{ color: "#1a2810" }}>{item.name_ar}</p>
-                    <span className="text-[11px] shrink-0" style={{ color: "#c0c8bc" }}>× {item.quantity}</span>
-                    <span className="text-[13px] font-semibold tabular-nums shrink-0 ms-2" style={{ color: "#b07d2e" }}>
+                    <p className="flex-1 text-[13px] font-medium line-clamp-1" style={{ color: "var(--text-1)" }}>{item.name_ar}</p>
+                    <span className="text-[11px] shrink-0" style={{ color: "var(--text-3)" }}>× {item.quantity}</span>
+                    <span className="text-[13px] font-semibold tabular-nums shrink-0 ms-2" style={{ color: "var(--gold)" }}>
                       {(item.price * item.quantity).toFixed(2)} <span className="text-[10px] font-normal">د.أ</span>
                     </span>
                   </div>
@@ -519,33 +517,33 @@ try {
               </div>
 
               <SectionLabel>الإجمالي</SectionLabel>
-              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #eaede8" }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
                 <PriceRow label="المنتجات" value={`${subtotal.toFixed(2)} د.أ`} />
                 <PriceRow label={`التوصيل — ${form.governorate}`} value={`${deliveryFee.toFixed(2)} د.أ`} divider />
-                <div className="flex justify-between items-center px-4 py-3.5" style={{ borderTop: "1px solid #f3f3f3" }}>
-                  <span className="text-[13.5px] font-bold" style={{ color: "#1a2810" }}>الإجمالي الكلي</span>
-                  <span className="text-[20px] font-bold tabular-nums" style={{ color: "#1c3a1a", fontFamily: "var(--font-display, serif)" }}>
-                    {total.toFixed(2)} <span className="text-[11px] font-normal" style={{ color: "#c0c8bc" }}>د.أ</span>
+                <div className="flex justify-between items-center px-4 py-3.5" style={{ borderTop: "1px solid var(--border)" }}>
+                  <span className="text-[13.5px] font-bold" style={{ color: "var(--text-1)" }}>الإجمالي الكلي</span>
+                  <span className="text-[20px] font-bold tabular-nums" style={{ color: "var(--forest)", fontFamily: "var(--font-display, serif)" }}>
+                    {total.toFixed(2)} <span className="text-[11px] font-normal" style={{ color: "var(--text-3)" }}>د.أ</span>
                   </span>
                 </div>
               </div>
 
               <SectionLabel>التوصيل إلى</SectionLabel>
-              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #eaede8" }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
                 {(
                   [
                     ["الاسم",     form.name],
                     ["واتساب",    form.phone],
-                    ...(form.phone2 ? [["رقم احتياطي", form.phone2]] : []),
+                    ["رقم احتياطي", form.phone2],
                     ["المنطقة",   `${form.governorate} — ${form.area}`],
                     ["العنوان",   form.street],
                     ...(form.notes ? [["ملاحظات", form.notes]] : []),
                   ] as [string, string][]
                 ).map(([lbl, val], i) => (
                   <div key={lbl} className="flex items-start justify-between gap-4 px-4 py-2.5"
-                    style={{ borderTop: i > 0 ? "1px solid #f3f3f3" : "none" }}>
-                    <span className="text-[11px] shrink-0 mt-0.5" style={{ color: "#c0c8bc" }}>{lbl}</span>
-                    <span className="text-[12.5px] text-end leading-snug" style={{ color: "#1a2810" }}>{val}</span>
+                    style={{ borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
+                    <span className="text-[11px] shrink-0 mt-0.5" style={{ color: "var(--text-3)" }}>{lbl}</span>
+                    <span className="text-[12.5px] text-end leading-snug" style={{ color: "var(--text-1)" }}>{val}</span>
                   </div>
                 ))}
               </div>
@@ -561,16 +559,16 @@ try {
 
         {/* ── Footer — shrink-0, never scrolls ─────────────────────── */}
         {!done && items.length > 0 && (
-          <div className="shrink-0 bg-white px-5 pt-3 pb-5" style={{ borderTop: "1px solid #f2f2f2" }}>
+          <div className="shrink-0 bg-[var(--white)] px-5 pt-3 pb-5" style={{ borderTop: "1px solid var(--border)" }}>
 
             {step === 0 && (
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[13px]" style={{ color: "#9aaa90", fontFamily: "var(--font-display, serif)" }}>
+                <span className="text-[13px]" style={{ color: "var(--text-3)", fontFamily: "var(--font-display, serif)" }}>
                   الإجمالي
                 </span>
-                <span className="text-[22px] font-bold tabular-nums" style={{ color: "#1a2810", fontFamily: "var(--font-display, serif)" }}>
+                <span className="text-[22px] font-bold tabular-nums" style={{ color: "var(--text-1)", fontFamily: "var(--font-display, serif)" }}>
                   {subtotal.toFixed(2)}{" "}
-                  <span className="text-[12px] font-normal" style={{ color: "#c0c8bc" }}>د.أ</span>
+                  <span className="text-[12px] font-normal" style={{ color: "var(--text-3)" }}>د.أ</span>
                 </span>
               </div>
             )}
@@ -588,9 +586,9 @@ try {
                 <button
                   onClick={() => { setStep(1); setError(""); }}
                   className="flex items-center gap-1.5 rounded-xl font-medium text-[13px] shrink-0 transition-colors"
-                  style={{ padding: "0 16px", height: 46, background: "#f2f5f1", color: "#4a6640", border: "1px solid #dde8d8", cursor: "pointer" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#e8f0e4"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#f2f5f1"; }}
+                  style={{ padding: "0 16px", height: 46, background: "var(--surface-alt)", color: "var(--text-2)", border: "1px solid var(--border-mid)", cursor: "pointer" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--forest-pale)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "var(--surface-alt)"; }}
                 >
                   <Pencil size={13} />
                   <span>تعديل</span>
@@ -631,41 +629,41 @@ try {
 ══════════════════════════════════════════════════════════════════════════ */
 function PolicyBox() {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: "#f3f8f0", border: "1px solid #d6e8ce" }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: "var(--forest-pale)", border: "1px solid var(--border-mid)" }}>
 
       {/* Delivery highlights */}
       <div className="px-4 py-3 flex flex-col gap-2.5">
         {DELIVERY_INFO.map(({ Icon, text }) => (
           <div key={text} className="flex items-center gap-2.5">
-            <Icon size={13} style={{ color: "#5a9040", flexShrink: 0 }} />
-            <span className="text-[12px]" style={{ color: "#3a6428" }}>{text}</span>
+            <Icon size={13} style={{ color: "var(--forest-light)", flexShrink: 0 }} />
+            <span className="text-[12px]" style={{ color: "var(--forest-mid)" }}>{text}</span>
           </div>
         ))}
       </div>
 
       {/* Divider */}
-      <div style={{ height: "1px", background: "#cce0c2", margin: "0 16px" }} />
+      <div style={{ height: "1px", background: "var(--border-mid)", margin: "0 16px" }} />
 
       {/* Notes */}
       <div className="px-4 py-3 flex flex-col gap-2">
         {POLICY_NOTES.map((note, i) => (
           <div key={note} className="flex items-start gap-2">
-            <span style={{ color: "#7ab860", fontSize: 10, marginTop: 3, flexShrink: 0 }}>●</span>
+            <span style={{ color: "var(--forest-light)", fontSize: 10, marginTop: 3, flexShrink: 0 }}>●</span>
             {i === 2 ? (
-              <p className="text-[12px] leading-[1.6]" style={{ color: "#3a6428" }}>
+              <p className="text-[12px] leading-[1.6]" style={{ color: "var(--forest-mid)" }}>
                 للطلب المستعجل أو من خارج الأردن —{" "}
                 <a
                   href="https://wa.me/962789795740"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold"
-                  style={{ color: "#1a6810" }}
+                  style={{ color: "var(--forest-mid)" }}
                 >
                   تواصلي على الواتساب
                 </a>
               </p>
             ) : (
-              <p className="text-[12px] leading-[1.6]" style={{ color: "#3a6428" }}>{note}</p>
+              <p className="text-[12px] leading-[1.6]" style={{ color: "var(--forest-mid)" }}>{note}</p>
             )}
           </div>
         ))}
@@ -675,54 +673,45 @@ function PolicyBox() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   GovPicker — portal-based dropdown (overlays content, no layout push)
-   Uses createPortal to escape the drawer's transform context.
+   GovPicker — dropdown anchored under the trigger (scrolls with the form)
 ══════════════════════════════════════════════════════════════════════════ */
 function GovPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const triggerRef  = useRef<HTMLButtonElement>(null);
+  const wrapRef     = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const handleToggle = () => {
-    if (!open && triggerRef.current) {
-      setRect(triggerRef.current.getBoundingClientRect());
-    }
-    setOpen(o => !o);
-  };
 
   useEffect(() => {
     if (!open) return;
-    const handleOuter = (e: MouseEvent) => {
-      if (triggerRef.current?.contains(e.target as Node)) return;
-      if (dropdownRef.current?.contains(e.target as Node)) return;
+    // Bring the list into view (on phones it often opens below the fold)
+    requestAnimationFrame(() =>
+      dropdownRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
+    );
+    const handleOuter = (e: PointerEvent) => {
+      if (wrapRef.current?.contains(e.target as Node)) return;
       setOpen(false);
     };
-    const handleScroll = () => setOpen(false);
-    document.addEventListener("mousedown", handleOuter);
-    document.addEventListener("scroll", handleScroll, true);
-    return () => {
-      document.removeEventListener("mousedown", handleOuter);
-      document.removeEventListener("scroll", handleScroll, true);
-    };
+    document.addEventListener("pointerdown", handleOuter);
+    return () => document.removeEventListener("pointerdown", handleOuter);
   }, [open]);
 
-  const dropdown = open && rect && typeof window !== "undefined" && createPortal(
+  const dropdown = open && (
     <div
       ref={dropdownRef}
       dir="rtl"
       style={{
-        position:   "fixed",
-        top:        rect.bottom + 2,
-        right:      window.innerWidth - rect.right,
-        width:      rect.width,
-        zIndex:     9999,
-        background: "#fafbf9",
-        border:     "1px solid #dce0d9",
+        position:   "absolute",
+        top:        "calc(100% + 2px)",
+        insetInline: 0,
+        zIndex:     20,
+        background: "var(--surface-card)",
+        border:     "1px solid var(--border-mid)",
         borderRadius: 8,
         boxShadow:  "0 8px 28px rgba(0,0,0,0.12)",
-        maxHeight:  220,
+        maxHeight:  240,
         overflowY:  "auto",
+        overscrollBehavior: "contain",
+        WebkitOverflowScrolling: "touch",
+        scrollMarginBottom: 16,
       }}
     >
       {GOVERNORATES.map((g, i) => (
@@ -732,52 +721,52 @@ function GovPicker({ value, onChange }: { value: string; onChange: (v: string) =
           onClick={() => { onChange(g); setOpen(false); }}
           className="w-full flex items-center justify-between px-3 py-2.5 text-right text-[13px]"
           style={{
-            borderTop:  i > 0 ? "1px solid #edf0eb" : "none",
-            color:      g === value ? "#1c3a1a" : "#1a2810",
+            borderTop:  i > 0 ? "1px solid var(--border)" : "none",
+            color:      g === value ? "var(--forest)" : "var(--text-1)",
             fontWeight: g === value ? 600 : 400,
             cursor:     "pointer",
             background: "transparent",
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = "#eef2ec")}
+          onMouseEnter={e => (e.currentTarget.style.background = "var(--forest-pale)")}
           onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
         >
           <span>{g}</span>
-          {g === value && <Check size={12} style={{ color: "#1c3a1a", flexShrink: 0 }} />}
+          {g === value && <Check size={12} style={{ color: "var(--forest)", flexShrink: 0 }} />}
         </button>
       ))}
-    </div>,
-    document.body
+    </div>
   );
 
   return (
     <div>
-      <label className="flex items-center gap-1 text-[12.5px] font-medium mb-1.5" style={{ color: "#5a7a52" }}>
+      <label className="flex items-center gap-1 text-[12.5px] font-medium mb-1.5" style={{ color: "var(--text-2)" }}>
         المحافظة <span style={{ color: "#c0392b", fontSize: 10 }}>*</span>
       </label>
+      <div ref={wrapRef} style={{ position: "relative" }}>
       <button
-        ref={triggerRef}
         type="button"
-        onClick={handleToggle}
+        onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-3.5 text-[13.5px] transition-all duration-150"
         style={{
           height:       42,
-          background:   "#ffffff",
-          border:       open ? "1.5px solid #5c8f4e" : "1px solid #dde6d8",
+          background:   "var(--white)",
+          border:       open ? "1.5px solid var(--forest-light)" : "1px solid var(--border-mid)",
           boxShadow:    "none",
           borderRadius: 8,
-          color:        value ? "#1a2810" : "#bac6b5",
+          color:        value ? "var(--text-1)" : "var(--text-3)",
           cursor:       "pointer",
         }}
       >
         <span>{value || "اختاري المحافظة..."}</span>
         <ChevronDown size={14} style={{
-          color:      "#b0b8ac",
+          color:      "var(--text-3)",
           transform:  open ? "rotate(180deg)" : "rotate(0deg)",
           transition: "transform 0.22s ease",
           flexShrink: 0,
         }} />
       </button>
       {dropdown}
+      </div>
     </div>
   );
 }
@@ -791,24 +780,24 @@ function CartRow({ item, showDivider, onRemove, onQtyChange }: {
 }) {
   return (
     <div className="flex items-center gap-3.5 px-5 py-4"
-      style={{ borderTop: showDivider ? "1px solid #f5f5f5" : "none" }}>
-      <div className="relative shrink-0 rounded-xl overflow-hidden" style={{ width: 56, height: 56, background: "#f7f8f5" }}>
+      style={{ borderTop: showDivider ? "1px solid var(--surface-alt)" : "none" }}>
+      <div className="relative shrink-0 rounded-xl overflow-hidden" style={{ width: 56, height: 56, background: "var(--surface-card)" }}>
         {item.image_url ? (
           <Image src={item.image_url} alt={item.name_ar} fill className="object-contain p-1.5" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 0.15 }}>
-            <BranchIcon size={22} color="#8aaa80" />
+            <BranchIcon size={22} color="var(--text-3)" />
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold leading-snug line-clamp-2 mb-2.5" style={{ color: "#1a2810" }}>
+        <p className="text-[13px] font-semibold leading-snug line-clamp-2 mb-2.5" style={{ color: "var(--text-1)" }}>
           {item.name_ar}
         </p>
         <div className="flex items-center gap-2">
           <QtyBtn sign="−" onClick={() => onQtyChange(item.quantity - 1)} />
-          <span className="text-[14px] font-bold w-5 text-center tabular-nums" style={{ color: "#1a2810" }}>
+          <span className="text-[14px] font-bold w-5 text-center tabular-nums" style={{ color: "var(--text-1)" }}>
             {item.quantity}
           </span>
           <QtyBtn sign="+" onClick={() => onQtyChange(item.quantity + 1)} />
@@ -816,16 +805,16 @@ function CartRow({ item, showDivider, onRemove, onQtyChange }: {
       </div>
 
       <div className="flex flex-col items-end gap-2.5 shrink-0">
-        <span className="text-[14px] font-bold tabular-nums" style={{ color: "#b07d2e" }}>
+        <span className="text-[14px] font-bold tabular-nums" style={{ color: "var(--gold)" }}>
           {(item.price * item.quantity).toFixed(2)}
           <span className="text-[10px] font-normal ms-0.5">د.أ</span>
         </span>
         <button
           onClick={onRemove}
           className="w-7 h-7 flex items-center justify-center rounded-full"
-          style={{ color: "#d0d0d0", background: "#f7f7f5", transition: "all 0.15s" }}
+          style={{ color: "var(--text-3)", background: "var(--surface-card)", transition: "all 0.15s" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#ef4444"; (e.currentTarget as HTMLElement).style.background = "#fef2f2"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#d0d0d0"; (e.currentTarget as HTMLElement).style.background = "#f7f7f5"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; (e.currentTarget as HTMLElement).style.background = "var(--surface-card)"; }}
           aria-label="حذف"
         >
           <Trash2 size={12} />
@@ -841,7 +830,7 @@ function CartRow({ item, showDivider, onRemove, onQtyChange }: {
 function SectionLabel({ children, topGap = false }: { children: React.ReactNode; topGap?: boolean }) {
   return (
     <p className={`text-[10.5px] font-semibold tracking-widest uppercase${topGap ? " pt-1" : ""}`}
-      style={{ color: "#b8c4b4" }}>
+      style={{ color: "var(--text-3)" }}>
       {children}
     </p>
   );
@@ -850,7 +839,7 @@ function SectionLabel({ children, topGap = false }: { children: React.ReactNode;
 function AField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="flex items-center gap-1 text-[12.5px] font-medium mb-1.5" style={{ color: "#5a7a52" }}>
+      <label className="flex items-center gap-1 text-[12.5px] font-medium mb-1.5" style={{ color: "var(--text-2)" }}>
         {label}
         {required && <span style={{ color: "#c0392b", fontSize: 11 }}>*</span>}
       </label>
@@ -910,9 +899,9 @@ function QtyBtn({ sign, onClick }: { sign: string; onClick: () => void }) {
     <button
       onClick={onClick}
       className="flex items-center justify-center rounded-full text-[14px] font-semibold active:scale-95"
-      style={{ width: 26, height: 26, background: "#f0f0ee", color: "#555", border: "none", cursor: "pointer", transition: "background 0.15s" }}
-      onMouseEnter={e => (e.currentTarget.style.background = "#e5e5e2")}
-      onMouseLeave={e => (e.currentTarget.style.background = "#f0f0ee")}
+      style={{ width: 26, height: 26, background: "var(--surface-alt)", color: "var(--text-2)", border: "none", cursor: "pointer", transition: "background 0.15s" }}
+      onMouseEnter={e => (e.currentTarget.style.background = "var(--forest-pale)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "var(--surface-alt)")}
     >
       {sign}
     </button>
@@ -930,8 +919,8 @@ function CtaBtn({ label, onClick, disabled = false }: {
       className="w-full flex items-center justify-center gap-2.5 rounded-xl font-bold text-[14px] active:scale-[0.98]"
       style={{
         height:        48,
-        background:    disabled ? "#eef1ec" : "linear-gradient(135deg,#254a22,#1c3a1a,#162f14)",
-        color:         disabled ? "#a8b8a4" : "#fff",
+        background:    disabled ? "var(--surface-alt)" : "linear-gradient(135deg,#254a22,#1c3a1a,#162f14)",
+        color:         disabled ? "var(--text-3)" : "#fff",
         border:        "none",
         cursor:        disabled ? "not-allowed" : "pointer",
         letterSpacing: "0.02em",
@@ -949,9 +938,9 @@ function CtaBtn({ label, onClick, disabled = false }: {
 function PriceRow({ label, value, divider = false }: { label: string; value: string; divider?: boolean }) {
   return (
     <div className="flex justify-between items-center px-4 py-2.5"
-      style={{ borderTop: divider ? "1px solid #f3f3f3" : "none" }}>
-      <span className="text-[12.5px]" style={{ color: "#8a9888" }}>{label}</span>
-      <span className="text-[13px] font-medium tabular-nums" style={{ color: "#1a2810" }}>{value}</span>
+      style={{ borderTop: divider ? "1px solid var(--border)" : "none" }}>
+      <span className="text-[12.5px]" style={{ color: "var(--text-2)" }}>{label}</span>
+      <span className="text-[13px] font-medium tabular-nums" style={{ color: "var(--text-1)" }}>{value}</span>
     </div>
   );
 }

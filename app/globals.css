@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-:root {
+:root, [data-theme="light"] {
+  color-scheme: light;
   /* Surfaces — original values preserved */
   --white:        #ffffff;
   --surface:      #fdf8f3;
@@ -54,6 +55,16 @@
   --hero-overlay:             linear-gradient(to right, rgba(253,248,243,0.78) 0%, rgba(253,248,243,0.52) 36%, rgba(253,248,243,0.10) 62%, transparent 82%);
   --hero-overlay-mobile-extra: linear-gradient(rgba(253,248,243,0.72), rgba(253,248,243,0.72));
   --hero-h1b:                 var(--forest-mid);
+
+  /* Solid brand green for filled surfaces (buttons, footer, badges) — stays dark in both themes */
+  --forest-bg:     #1c3a1a;
+  --forest-bg-mid: #2d5a0e;
+
+  /* RGB triplets for translucent gradients: rgba(var(--surface-rgb), .5) */
+  --surface-rgb:   253,248,243;
+  --hero-tint-rgb: 212,230,208;
+  --hero-ink-rgb:  30,55,25;
+  --hero-dim:      0.28;
 }
 
 @theme {
@@ -81,6 +92,22 @@
 
 /* ── Dark mode ── */
 [data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Brand greens used as TEXT must be light on dark surfaces */
+  --forest:       #d4e8c8;
+  --forest-mid:   #a9d08c;
+  --forest-light: #8fc06c;
+  --gold:         #d0a050;
+
+  --forest-bg:     #1f4a1c;
+  --forest-bg-mid: #2d6a1e;
+
+  --surface-rgb:   20,25,16;
+  --hero-tint-rgb: 15,19,12;
+  --hero-ink-rgb:  222,235,216;
+  --hero-dim:      0.5;
+
   --white:        #0f130c;
   --surface:      #141910;
   --surface-card: #192015;
@@ -91,7 +118,7 @@
 
   --text-1:  #deebd8;
   --text-2:  #8aaa80;
-  --text-3:  #506850;
+  --text-3:  #74906c;
 
   --border:     rgba(77, 124, 31, 0.22);
   --border-mid: rgba(77, 124, 31, 0.32);
@@ -129,7 +156,7 @@ html.lenis, html.lenis body { height: auto; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(77,124,31,0.35); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(77,124,31,0.6); }
-::selection { background: var(--forest-mid); color: #fff; }
+::selection { background: var(--forest-bg-mid); color: #fff; }
 
 /* Hide scrollbar for category strip */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
@@ -213,7 +240,7 @@ html.lenis, html.lenis body { height: auto; }
 /* Section backgrounds */
 .section-white  { background: var(--white); }
 .section-cream  { background: var(--surface); }
-.section-forest { background: var(--forest); }
+.section-forest { background: var(--forest-bg); }
 
 /* Hero text column — on mobile, needs enough top space to clear the fixed 60px navbar */
 .he-text {
@@ -300,14 +327,14 @@ html.lenis, html.lenis body { height: auto; }
 .btn-ghost-hero::before {
   content: '';
   position: absolute; inset: 0;
-  background: var(--forest-mid);
+  background: var(--forest-bg-mid);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
   z-index: -1;
 }
 .btn-ghost-hero:hover::before { transform: scaleX(1); }
-.btn-ghost-hero:hover { color: #e8f4e0; border-color: var(--forest-mid); }
+.btn-ghost-hero:hover { color: #e8f4e0; border-color: var(--forest-bg-mid); }
 
 /* Hero section background */
 .hero-section {

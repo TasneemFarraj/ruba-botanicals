@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 const IG_SVG = (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -18,6 +20,15 @@ const WA_SVG = (
   </svg>
 );
 
+function Leaf({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" className="w-3 h-3 shrink-0" style={{ transform: flip ? "scaleX(-1)" : undefined }} aria-hidden>
+      <path d="M2 14C2 7 7 2 14 2c0 7-5 12-12 12z" fill="currentColor" opacity="0.85" />
+      <path d="M2 14 10 6" stroke="var(--forest-bg)" strokeWidth="1" />
+    </svg>
+  );
+}
+
 const NAV_LINKS = [
   { label: "حناء النقش", href: "/products?cat=henna-naqsh" },
   { label: "حناء الشعر", href: "/products?cat=henna-hair" },
@@ -27,9 +38,8 @@ const NAV_LINKS = [
 ];
 
 const INFO_LINKS = [
-  { label: "من ربى", href: "/#about" },
-  { label: "تواصلي معنا", href: "/#contact" },
-  { label: "سياسة الخصوصية", href: "/#privacy" },
+  { label: "من هي ربى", href: "/#about" },
+  { label: "تواصلي معنا", href: "https://wa.me/962789795740" },
 ];
 
 const SOCIAL = [
@@ -61,37 +71,43 @@ function FooterLink({ label, href }: { label: string; href: string }) {
 
 export default function Footer() {
   return (
-    <footer dir="rtl" style={{ background: "var(--forest)" }}>
+    <footer dir="rtl" style={{ background: "var(--forest-bg)" }}>
       <div className="max-w-7xl mx-auto px-6 md:px-10 pt-16 pb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <div
-              className="mb-4"
-              style={{
-                fontFamily: "var(--font-brand), 'Cormorant Garamond', Georgia, serif",
-                fontSize: "1.5rem",
-                fontWeight: 300,
-                letterSpacing: "0.18em",
-                color: "#fff",
-                direction: "ltr",
-                textAlign: "right",
-              }}
-            >
-              Ruba Botanical
+            <div className="inline-flex flex-col items-center mb-6">
+              <Image
+                src="/images/ruba-logo-circle.png"
+                alt="ربى فرّاج"
+                width={84}
+                height={84}
+                className="mb-4"
+              />
+              <div
+                dir="ltr"
+                className="flex flex-col items-center"
+                style={{ fontFamily: "var(--font-brand), 'Cormorant Garamond', Georgia, serif", color: "#fff" }}
+              >
+                <span style={{ fontSize: "2rem", fontWeight: 500, lineHeight: 1, letterSpacing: "0.01em" }}>
+                  Ruba Farraj
+                </span>
+                <span className="flex items-center gap-2 mt-2" style={{ color: "#d4e8c8" }}>
+                  <span className="h-px w-5" style={{ background: "rgba(212,232,200,0.4)" }} />
+                  <Leaf />
+                  <span style={{ fontSize: "0.72rem", fontWeight: 500, letterSpacing: "0.38em", textTransform: "uppercase", paddingLeft: "0.38em" }}>
+                    Botanicals
+                  </span>
+                  <Leaf flip />
+                  <span className="h-px w-5" style={{ background: "rgba(212,232,200,0.4)" }} />
+                </span>
+              </div>
             </div>
-            <p
-              className="text-sm mb-6"
-              style={{ color: "rgba(255,255,255,0.5)", lineHeight: 1.9 }}
-            >
-              من الطبيعة ..
+            <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.9 }}>
+              من الطبيعة تبدأ العناية الآمنة، ويزهر الجمال.
               <br />
-              تبدأ العناية الآمنة، ويزهر الجمال
-              <br />
-              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.78rem" }}>
-                حناء، أعشاب ومكوّنات طبيعية،
-                <br />
-                مختارة بعناية ومدروسة بثقة..
+              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
+                منتجات طبيعية للعناية بالشعر والجسم، وحناء نقية، بتركيبات مدروسة بخبرة علمية.
               </span>
             </p>
             <div className="flex items-center gap-2.5">
@@ -191,7 +207,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-6 flex flex-col md:flex-row items-center justify-between gap-3">
         <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-          © {new Date().getFullYear()} Ruba Botanical — جميع الحقوق محفوظة
+          © {new Date().getFullYear()} Ruba Farraj Botanicals — جميع الحقوق محفوظة
         </p>
         <a
           href="https://wa.me/962789795740"

@@ -140,11 +140,11 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between" style={{ height: 60 }}>
 
           {/* Logo */}
-          <button onClick={() => isHome ? window.scrollTo({ top: 0, behavior: "smooth" }) : router.push("/")} className="shrink-0 flex items-center" aria-label="ربى للحناء">
+          <button onClick={() => isHome ? window.scrollTo({ top: 0, behavior: "smooth" }) : router.push("/")} className="shrink-0 flex items-center" aria-label="ربى فرّاج">
             {logoError ? (
-              <span className="font-display" style={{ fontSize: 18, color: "var(--forest)" }}>ربى للحناء</span>
+              <span className="font-display" style={{ fontSize: 18, color: "var(--forest)" }}>ربى فرّاج</span>
             ) : (
-              <Image src="/images/ruba-logo.png" alt="ربى للحناء" width={110} height={44} priority className="h-11 w-auto" onError={() => setLogoError(true)} />
+              <Image src="/images/ruba-logo.png" alt="ربى فرّاج" width={110} height={44} priority className="h-11 w-auto" onError={() => setLogoError(true)} />
             )}
           </button>
 
@@ -175,7 +175,7 @@ export default function Navbar() {
                 if (el) { e.preventDefault(); el.scrollIntoView({ behavior: "smooth" }); }
               }}
             >
-              من ربى؟
+              من هي ربى؟
             </a>
           </div>
 
@@ -217,7 +217,7 @@ export default function Navbar() {
                     minWidth: 14,
                     height: 14,
                     fontSize: 8,
-                    background: "var(--forest)",
+                    background: "var(--forest-bg)",
                     color: "#fff",
                     top: -2,
                     insetInlineEnd: -2,
@@ -277,7 +277,7 @@ export default function Navbar() {
               className="shrink-0 px-4 rounded-lg text-[13px] font-medium"
               style={{
                 height: 38,
-                background: searchQuery.trim() ? "var(--forest)" : "var(--surface-card)",
+                background: searchQuery.trim() ? "var(--forest-bg)" : "var(--surface-card)",
                 color: searchQuery.trim() ? "#fff" : "var(--text-light)",
                 transition: "background 0.25s ease, color 0.25s ease",
                 cursor: "pointer",
@@ -410,9 +410,9 @@ export default function Navbar() {
             <X size={13} strokeWidth={1.8} />
           </button>
           {logoError ? (
-            <span className="font-display" style={{ fontSize: 16, color: "var(--forest)" }}>ربى للحناء</span>
+            <span className="font-display" style={{ fontSize: 16, color: "var(--forest)" }}>ربى فرّاج</span>
           ) : (
-            <Image src="/images/ruba-logo.png" alt="ربى للحناء" width={90} height={36} className="h-9 w-auto" onError={() => setLogoError(true)} />
+            <Image src="/images/ruba-logo.png" alt="ربى فرّاج" width={90} height={36} className="h-9 w-auto" onError={() => setLogoError(true)} />
           )}
         </div>
 
@@ -496,7 +496,7 @@ export default function Navbar() {
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--forest)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
             >
-              من ربى؟
+              من هي ربى؟
             </a>
           </div>
         </div>
@@ -534,7 +534,7 @@ export default function Navbar() {
             السلة
             {count > 0 && (
               <span className="inline-flex items-center justify-center rounded-full font-bold text-[8px]"
-                style={{ minWidth: 14, height: 14, background: "var(--forest)", color: "#fff", padding: "0 2px" }}>
+                style={{ minWidth: 14, height: 14, background: "var(--forest-bg)", color: "#fff", padding: "0 2px" }}>
                 {count}
               </span>
             )}

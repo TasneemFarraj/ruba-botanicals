@@ -32,7 +32,7 @@ export function buildWAMessage(
 ): string {
   const lines = items.map(i => `• ${i.name_ar} × ${i.quantity} = ${(i.price * i.quantity).toFixed(2)} د.أ`).join('\n')
   const total = items.reduce((s, i) => s + i.price * i.quantity, 0)
-  return `🌿 طلب جديد - ربى للحناء\n\nالمنتجات:\n${lines}\n\n💰 الإجمالي: ${total.toFixed(2)} د.أ\n\n👤 ${customer.name}\n📱 ${customer.phone}${customer.notes ? `\n📝 ${customer.notes}` : ''}`
+  return `🌿 طلب جديد - ربى فرّاج\n\nالمنتجات:\n${lines}\n\n💰 الإجمالي: ${total.toFixed(2)} د.أ\n\n👤 ${customer.name}\n📱 ${customer.phone}${customer.notes ? `\n📝 ${customer.notes}` : ''}`
 }
 
 /** @deprecated use buildWAMessage */

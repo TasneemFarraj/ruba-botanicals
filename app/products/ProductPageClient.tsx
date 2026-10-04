@@ -76,7 +76,7 @@ export default function ProductPageClient({ searchParams }: Props) {
       <div
         className="relative overflow-hidden"
         style={{
-          backgroundImage: "linear-gradient(rgba(253,248,243,0.82), rgba(253,248,243,0.92)), var(--hero-bg)",
+          backgroundImage: "linear-gradient(rgba(var(--surface-rgb),0.82), rgba(var(--surface-rgb),0.92)), var(--hero-bg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -229,9 +229,9 @@ function Pill({
       onClick={onClick}
       className="shrink-0 rounded-full px-3 py-1 text-[12px] font-medium transition-all duration-200 whitespace-nowrap"
       style={{
-        background: active ? "var(--forest)" : "transparent",
+        background: active ? "var(--forest-bg)" : "transparent",
         color:      active ? "#fff" : "var(--text-2)",
-        border:     `1px solid ${active ? "var(--forest)" : "var(--border-mid)"}`,
+        border:     `1px solid ${active ? "var(--forest-bg)" : "var(--border-mid)"}`,
         fontFamily: "var(--font-display), Georgia, serif",
         lineHeight: "1.5",
       }}

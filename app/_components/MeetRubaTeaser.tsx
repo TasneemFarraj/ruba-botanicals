@@ -49,7 +49,7 @@ export default function MeetRubaTeaser() {
       style={{ scrollMarginTop: "72px" }}
     >
       {/* ── Mobile layout: image on top, content below ── */}
-      <div className="md:hidden" style={{ background: "#fdf8f3" }}>
+      <div className="md:hidden" style={{ background: "var(--surface)" }}>
         {/* Wrapper: relative so the top-fade can escape the overflow:hidden image container */}
         <div className="relative mx-auto" style={{ width: "75%" }}>
           {/* Image container: overflow:hidden required by Next.js fill */}
@@ -65,7 +65,7 @@ export default function MeetRubaTeaser() {
             {/* Bottom fade into content */}
             <div aria-hidden="true" style={{
               position: "absolute", inset: 0, pointerEvents: "none",
-              background: "linear-gradient(to top, #fdf8f3 0%, rgba(253,248,243,0) 30%)",
+              background: "linear-gradient(to top, var(--surface) 0%, rgba(var(--surface-rgb),0) 30%)",
             }} />
           </div>
           {/* Top fade — outside overflow:hidden so it's never clipped */}
@@ -74,14 +74,14 @@ export default function MeetRubaTeaser() {
             top: 0, left: 0, right: 0,
             height: "30%",
             pointerEvents: "none",
-            background: "linear-gradient(to bottom, #fdf8f3 0%, rgba(253,248,243,0) 100%)",
+            background: "linear-gradient(to bottom, var(--surface) 0%, rgba(var(--surface-rgb),0) 100%)",
             zIndex: 1,
           }} />
         </div>
 
         {/* Content */}
         <div style={{
-          background: "#fdf8f3",
+          background: "var(--surface)",
           padding: "2rem 1.5rem 3rem",
           display: "flex",
           flexDirection: "column",
@@ -128,20 +128,20 @@ export default function MeetRubaTeaser() {
         {/* Top fade — matches the surface/cream colour of the section above */}
         <div aria-hidden="true" style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          background: "linear-gradient(to bottom, #fdf8f3 0%, rgba(253,248,243,0) 18%)",
+          background: "linear-gradient(to bottom, var(--surface) 0%, rgba(var(--surface-rgb),0) 18%)",
         }} />
 
         {/* Bottom fade */}
         <div aria-hidden="true" style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          background: "linear-gradient(to top, #fdf8f3 0%, rgba(253,248,243,0) 22%)",
+          background: "linear-gradient(to top, var(--surface) 0%, rgba(var(--surface-rgb),0) 22%)",
         }} />
 
         {/* Right fade — cream zone */}
         <div aria-hidden="true" style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background:
-            "linear-gradient(to right, transparent 0%, transparent 36%, rgba(253,248,243,0.05) 44%, rgba(253,248,243,0.36) 55%, rgba(253,248,243,0.82) 70%, rgba(253,248,243,0.97) 83%, #fdf8f3 100%)",
+            "linear-gradient(to right, transparent 0%, transparent 36%, rgba(var(--surface-rgb),0.05) 44%, rgba(var(--surface-rgb),0.36) 55%, rgba(var(--surface-rgb),0.82) 70%, rgba(var(--surface-rgb),0.97) 83%, var(--surface) 100%)",
         }} />
 
         {/* Content */}

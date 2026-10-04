@@ -184,7 +184,7 @@ export default function ProductPanel({ product, onClose }: Props) {
                   onClick={() => setQty(q => Math.max(1, q - 1))}
                   className="w-4 h-4 flex items-center justify-center rounded-full transition-all duration-150"
                   style={{ color: qty === 1 ? "var(--text-3)" : "var(--text-2)" }}
-                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "var(--forest)"; el.style.color = "#fff"; }}
+                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "var(--forest-bg)"; el.style.color = "#fff"; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = qty === 1 ? "var(--text-3)" : "var(--text-2)"; }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3">
@@ -199,7 +199,7 @@ export default function ProductPanel({ product, onClose }: Props) {
                   onClick={() => setQty(q => q + 1)}
                   className="w-4 h-4 flex items-center justify-center rounded-full transition-all duration-150"
                   style={{ color: "var(--text-2)" }}
-                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "var(--forest)"; el.style.color = "#fff"; }}
+                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "var(--forest-bg)"; el.style.color = "#fff"; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = "var(--text-2)"; }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3">
@@ -221,7 +221,7 @@ export default function ProductPanel({ product, onClose }: Props) {
               onClick={handleAddToCart}
               className="w-full flex items-center justify-center gap-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-88 active:scale-[0.98]"
               style={{
-                background: "var(--forest)",
+                background: "var(--forest-bg)",
                 color: "#fff",
                 padding: "11px 0",
               }}

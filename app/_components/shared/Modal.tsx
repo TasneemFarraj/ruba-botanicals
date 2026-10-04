@@ -27,7 +27,7 @@ export default function Modal({ open, onClose, title, children, footer, width = 
     >
       <div
         className="w-full rounded-2xl overflow-hidden"
-        style={{ maxWidth: width, background: '#fff', border: '0.5px solid var(--border)' }}
+        style={{ maxWidth: width, background: 'var(--white)', border: '0.5px solid var(--border)' }}
         onClick={e => e.stopPropagation()}
         dir="rtl"
       >

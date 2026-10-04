@@ -43,7 +43,7 @@ export default function EmptyState({ title, subtitle, actionLabel, actionHref, o
             href={actionHref}
             className="mt-1 rounded-full px-6 py-2.5 text-[13px] font-medium transition-all duration-200"
             style={{
-              background: "var(--forest)",
+              background: "var(--forest-bg)",
               color: "#fff",
               fontFamily: "var(--font-display), Georgia, serif",
             }}
@@ -55,7 +55,7 @@ export default function EmptyState({ title, subtitle, actionLabel, actionHref, o
             onClick={onAction}
             className="mt-1 rounded-full px-6 py-2.5 text-[13px] font-medium transition-all duration-200"
             style={{
-              background: "var(--forest)",
+              background: "var(--forest-bg)",
               color: "#fff",
               fontFamily: "var(--font-display), Georgia, serif",
             }}

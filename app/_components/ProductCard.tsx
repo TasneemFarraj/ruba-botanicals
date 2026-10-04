@@ -154,7 +154,7 @@ export default function ProductCard({ product, bgColor }: Props) {
           onMouseEnter={(e) => {
             if (!product.in_stock) return;
             const el = e.currentTarget as HTMLElement;
-            el.style.background = "var(--forest)";
+            el.style.background = "var(--forest-bg)";
             el.style.color = "#fff";
             el.style.borderColor = "var(--forest)";
           }}

@@ -122,12 +122,31 @@ export default function ProductDetailPage({
                     </span>
                   )}
                 </div>
-                <h1
-                  className="font-display leading-[1.25]"
-                  style={{ fontSize: "clamp(1.7rem, 2.8vw, 2.4rem)", color: "var(--text-1)" }}
-                >
-                  {product.name_ar}
-                </h1>
+                <div className="flex items-center gap-3">
+                  {/* Back button — same as category page */}
+                  <button
+                    onClick={() => router.back()}
+                    className="flex items-center justify-center shrink-0 rounded-full transition-all duration-200 hover:opacity-60"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      border: "1px solid var(--border)",
+                      color: "var(--text-2)",
+                      background: "transparent",
+                    }}
+                    aria-label="العودة"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                  <h1
+                    className="font-display leading-[1.25]"
+                    style={{ fontSize: "clamp(1.7rem, 2.8vw, 2.4rem)", color: "var(--text-1)" }}
+                  >
+                    {product.name_ar}
+                  </h1>
+                </div>
               </div>
 
               <div style={{ margin: "20px 0 32px" }} />
@@ -208,7 +227,7 @@ export default function ProductDetailPage({
                         <button
                           onClick={handleAddToCart}
                           className="flex items-center justify-center gap-1.5 text-[12px] font-medium tracking-[0.05em] transition-all duration-200 active:scale-[0.98]"
-                          style={{ background: added ? "var(--forest-mid)" : "var(--forest)", color: "#fff", height: 36, borderRadius: 999, paddingInline: 18 }}
+                          style={{ background: added ? "var(--forest-bg-mid)" : "var(--forest-bg)", color: "#fff", height: 36, borderRadius: 999, paddingInline: 18 }}
                           onMouseEnter={(e) => { if (!added) (e.currentTarget as HTMLElement).style.opacity = "0.84"; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
                         >
@@ -464,7 +483,7 @@ export default function ProductDetailPage({
                     onClick={handleAddToCart}
                     className="shrink-0 flex items-center gap-1.5 text-[11.5px] font-medium tracking-wide transition-opacity active:scale-[0.97]"
                     style={{
-                      background: added ? "var(--forest-mid)" : "var(--forest)",
+                      background: added ? "var(--forest-bg-mid)" : "var(--forest-bg)",
                       color: "#fff",
                       height: 32,
                       borderRadius: 999,
@@ -508,7 +527,7 @@ function QtyBtn({
       onClick={onClick}
       className="flex items-center justify-center transition-all duration-150"
       style={{ width: size, height: size, color: dim ? "var(--text-3)" : "var(--text-1)", flexShrink: 0 }}
-      onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "var(--forest)"; el.style.color = "#fff"; }}
+      onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "var(--forest-bg)"; el.style.color = "#fff"; }}
       onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = dim ? "var(--text-3)" : "var(--text-1)"; }}
     >
       {children}

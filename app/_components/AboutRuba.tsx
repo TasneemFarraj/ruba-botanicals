@@ -123,11 +123,11 @@ export default function AboutRuba() {
           />
           {/* Desktop landscape */}
           <Image
-            src="/images/ruba-farraj.jpeg"
+            src="/images/ruba-farraj-field.jpg"
             alt="ربى فرّاج — مؤسِّسة Ruba Botanicals"
             fill
             className="object-cover hidden md:block"
-            style={{ objectPosition: "center 12%" }}
+            style={{ objectPosition: "left center" }}
             priority
             sizes="100vw"
           />
@@ -149,7 +149,7 @@ export default function AboutRuba() {
           style={{
             position: "absolute", inset: 0, pointerEvents: "none",
             background:
-              "linear-gradient(to right, transparent 0%, transparent 44%, rgba(253,248,243,0.12) 56%, rgba(253,248,243,0.42) 68%, rgba(253,248,243,0.74) 80%, rgba(253,248,243,0.93) 90%, var(--surface) 100%)",
+              "linear-gradient(to right, transparent 0%, transparent 44%, rgba(var(--surface-rgb),0.12) 56%, rgba(var(--surface-rgb),0.42) 68%, rgba(var(--surface-rgb),0.74) 80%, rgba(var(--surface-rgb),0.93) 90%, var(--surface) 100%)",
           }}
         />
 
@@ -260,7 +260,7 @@ export default function AboutRuba() {
       {/* ════════════════════════════════════════
           STATS STRIP
       ════════════════════════════════════════ */}
-      <section ref={statsRef} style={{ background: "var(--forest)" }}>
+      <section ref={statsRef} style={{ background: "var(--forest-bg)" }}>
         <div
           className="max-w-5xl mx-auto"
           style={{
@@ -451,7 +451,7 @@ export default function AboutRuba() {
                 transition: "background 0.2s ease",
                 cursor: "default",
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "rgba(28,58,26,0.03)")}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "var(--forest-pale)")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = "transparent")}
             >
               {/* Index */}
@@ -489,7 +489,7 @@ export default function AboutRuba() {
           CTA
       ════════════════════════════════════════ */}
       <section style={{
-        background: "var(--forest)",
+        background: "var(--forest-bg)",
         padding: "clamp(5rem, 9vw, 8rem) 1.5rem",
         textAlign: "center",
         position: "relative",

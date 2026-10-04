@@ -11,20 +11,49 @@ import type { User } from "@supabase/supabase-js";
 import EmptyState from "../_components/shared/EmptyState";
 
 type Tab = "orders" | "products" | "categories";
+type OrdersView = "active" | "archive";
+
+/* ─── Status config ─── */
+const STATUS_CONFIG: Record<Order["status"], { label: string; bg: string; color: string }> = {
+  pending: { label: "جديد", bg: "#fef3c7", color: "#92400e" },
+  ready:   { label: "جاهز", bg: "#dbeafe", color: "#1e40af" },
+  done:    { label: "تم",   bg: "#d1fae5", color: "#065f46" },
+};
+
+const STATUS_OPTIONS: { value: Order["status"]; label: string; icon: React.ReactNode }[] = [
+  {
+    value: "pending", label: "جديد",
+    icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3.5 2" /></svg>),
+  },
+  {
+    value: "ready", label: "جاهز",
+    icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" /></svg>),
+  },
+  {
+    value: "done", label: "تم",
+    icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" /></svg>),
+  },
+];
 
 /* ─── Status badge ─── */
 function StatusBadge({ status }: { status: Order["status"] }) {
-  const config: Record<Order["status"], { label: string; bg: string; color: string }> = {
-    pending:   { label: "جديد",  bg: "#fef3c7", color: "#92400e" },
-    confirmed: { label: "مؤكد",  bg: "#dbeafe", color: "#1e40af" },
-    done:      { label: "تم",    bg: "#d1fae5", color: "#065f46" },
-  };
-  const c = config[status];
+  // Fallback covers legacy values (e.g. "confirmed") until the DB migration runs
+  const c = STATUS_CONFIG[status] ?? STATUS_CONFIG.ready;
   return (
     <span className="text-[11px] font-semibold px-2.5 py-1 rounded-xl whitespace-nowrap"
       style={{ background: c.bg, color: c.color }}>
       {c.label}
     </span>
+  );
+}
+
+/* ─── Spinner ─── */
+function Spinner() {
+  return (
+    <div className="flex justify-center py-20">
+      <div className="w-6 h-6 border-2 rounded-full animate-spin"
+        style={{ borderColor: "var(--forest)", borderTopColor: "transparent" }} />
+    </div>
   );
 }
 
@@ -37,7 +66,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
       aria-checked={value}
       onClick={onChange}
       className="relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none shrink-0"
-      style={{ background: value ? "var(--forest)" : "#e2e8f0" }}
+      style={{ background: value ? "var(--forest-bg)" : "#e2e8f0" }}
     >
       <span
         className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200"
@@ -58,7 +87,7 @@ function Toast({ message, type, onDone }: ToastState & { onDone: () => void }) {
   return (
     <div
       className="fixed bottom-6 left-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-[13px] font-medium"
-      style={{ background: type === "success" ? "var(--forest)" : "#dc2626", color: "#fff", minWidth: 200, maxWidth: "calc(100vw - 48px)" }}
+      style={{ background: type === "success" ? "var(--forest-bg)" : "#dc2626", color: "#fff", minWidth: 200, maxWidth: "calc(100vw - 48px)" }}
     >
       {type === "success" ? (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 shrink-0">
@@ -124,6 +153,47 @@ function ConfirmDialog({
               style={{ background: "#dc2626", color: "#fff" }}
             >
               {loading ? "جاري الحذف..." : "حذف"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Confirm archive dialog ─── */
+function ConfirmArchiveDialog({
+  name, onConfirm, onCancel, loading,
+}: { name: string; onConfirm: () => void; onCancel: () => void; loading: boolean }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+      <div onClick={onCancel} className="absolute inset-0" style={{ background: "rgba(28,58,26,0.45)", backdropFilter: "blur(4px)" }} />
+      <div className="relative w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden" style={{ background: "#fff" }}>
+        <div className="p-6">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: "#d1fae5" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#065f46" strokeWidth="1.8" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4M5 7v11a2 2 0 002 2h10a2 2 0 002-2V7M9 4h6M10 12h4" />
+            </svg>
+          </div>
+          <h3 className="font-display text-[18px] mb-1" style={{ color: "#1a2810" }}>هل تريدين نقل هذا الطلب للأرشيف؟</h3>
+          <p className="text-[13px] mb-5" style={{ color: "var(--text-muted)" }}>
+            طلب <span className="font-semibold mx-1" style={{ color: "#1a2810" }}>{name.trim()}</span> سيُنقل إلى الأرشيف بحالة &quot;تم&quot;.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={onCancel}
+              className="flex-1 py-2.5 rounded-xl text-[13px] font-medium border transition-opacity hover:opacity-70"
+              style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+            >
+              إلغاء
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-opacity disabled:opacity-50"
+              style={{ background: "var(--forest-bg)", color: "#fff" }}
+            >
+              {loading ? "جاري النقل..." : "تأكيد"}
             </button>
           </div>
         </div>
@@ -311,7 +381,7 @@ function CategoryForm({
         <div className="px-5 py-2.5 border-t shrink-0" style={{ borderColor: "var(--border)" }}>
           <button onClick={handleSubmit as unknown as React.MouseEventHandler} disabled={loading}
             className="w-full py-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: "var(--forest)", color: "#fff" }}>
+            style={{ background: "var(--forest-bg)", color: "#fff" }}>
             {loading ? "جاري الحفظ..." : category ? "حفظ التعديلات" : "إضافة القسم"}
           </button>
         </div>
@@ -334,6 +404,9 @@ export default function AdminPage() {
   const [ordersLoading,   setOrdersLoading]   = useState(false);
   const [expandedOrder,   setExpandedOrder]   = useState<string | null>(null);
   const [copiedAddressId, setCopiedAddressId] = useState<string | null>(null);
+  const [ordersView,      setOrdersView]      = useState<OrdersView>("active");
+  const [confirmArchive,  setConfirmArchive]  = useState<Order | null>(null);
+  const [archiveLoading,  setArchiveLoading]  = useState(false);
 
   /* Products */
   const [products,        setProducts]        = useState<Product[]>([]);
@@ -409,8 +482,40 @@ export default function AdminPage() {
 
   /* ─ Helpers ─ */
   const updateOrderStatus = async (id: string, status: Order["status"]) => {
-    await supabase.from("orders").update({ status }).eq("id", id);
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+    if (error) {
+      console.error("[updateOrderStatus]", error);
+      setToast({ message: "تعذّر تحديث حالة الطلب", type: "error" });
+      return false;
+    }
+    let completed_at: string | null = null;
+    if (status === "done") {
+      // Best-effort: requires the completed_at column (see supabase/migrations)
+      completed_at = new Date().toISOString();
+      const { error: tsError } = await supabase.from("orders").update({ completed_at }).eq("id", id);
+      if (tsError) { console.warn("[updateOrderStatus] completed_at not saved", tsError); completed_at = null; }
+    }
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status, ...(status === "done" ? { completed_at } : {}) } : o));
+    return true;
+  };
+
+  /* "تم" moves the order to the archive — ask first */
+  const handleStatusClick = (order: Order, status: Order["status"]) => {
+    if (status === order.status) return;
+    if (status === "done") { setConfirmArchive(order); return; }
+    updateOrderStatus(order.id, status);
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!confirmArchive) return;
+    setArchiveLoading(true);
+    const ok = await updateOrderStatus(confirmArchive.id, "done");
+    setArchiveLoading(false);
+    setConfirmArchive(null);
+    if (ok) {
+      if (expandedOrder === confirmArchive.id) setExpandedOrder(null);
+      setToast({ message: "تم نقل الطلب للأرشيف", type: "success" });
+    }
   };
 
   const copyAddress = (order: Order) => {
@@ -468,12 +573,11 @@ export default function AdminPage() {
 
   const pendingCount = orders.filter(o => o.status === "pending").length;
 
-  const Spinner = () => (
-    <div className="flex justify-center py-20">
-      <div className="w-6 h-6 border-2 rounded-full animate-spin"
-        style={{ borderColor: "var(--forest)", borderTopColor: "transparent" }} />
-    </div>
-  );
+  // Anything not "done" counts as active, so legacy statuses never disappear from view
+  const activeOrders   = orders.filter(o => o.status !== "done");
+  const archivedOrders = orders
+    .filter(o => o.status === "done")
+    .sort((a, b) => (b.completed_at ?? b.created_at).localeCompare(a.completed_at ?? a.created_at));
 
   /* ─ Loading / auth ─ */
   if (loading) {
@@ -509,7 +613,7 @@ export default function AdminPage() {
         style={{ background: "#fff", borderColor: "var(--border)" }}>
         <div>
           <h1 className="font-display text-lg font-semibold" style={{ color: "var(--forest)" }}>
-            لوحة التحكم — ربى للحناء
+            لوحة التحكم — ربى فرّاج
           </h1>
           <p className="text-[11px] mt-0.5" style={{ color: "var(--text-light)" }}>{user.email}</p>
         </div>
@@ -521,7 +625,7 @@ export default function AdminPage() {
           <button
             onClick={() => supabase.auth.signOut()}
             className="text-xs px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
-            style={{ background: "var(--forest)", color: "#fff" }}>
+            style={{ background: "var(--forest-bg)", color: "#fff" }}>
             تسجيل خروج
           </button>
         </div>
@@ -575,7 +679,7 @@ export default function AdminPage() {
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all text-right"
                   style={{
                     background: active ? "var(--forest-pale)" : "transparent",
-                    color: active ? "var(--forest)" : "var(--text-muted)",
+                    color: active ? "var(--forest-bg)" : "var(--text-muted)",
                     fontWeight: active ? 600 : 400,
                     boxShadow: active ? "inset 0 0 0 1px rgba(28,58,26,0.12)" : "none",
                   }}
@@ -586,7 +690,7 @@ export default function AdminPage() {
                   <span className="flex-1">{tab.label}</span>
                   {tab.badge !== undefined && tab.badge > 0 && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-                      style={{ background: "var(--forest)", color: "#fff" }}>
+                      style={{ background: "var(--forest-bg)", color: "#fff" }}>
                       {tab.badge}
                     </span>
                   )}
@@ -597,7 +701,7 @@ export default function AdminPage() {
 
           {/* Bottom divider + version */}
           <div className="px-4 py-4 border-t" style={{ borderColor: "var(--border)" }}>
-            <p className="text-[10px]" style={{ color: "var(--text-light)" }}>ربى للحناء · لوحة التحكم</p>
+            <p className="text-[10px]" style={{ color: "var(--text-light)" }}>ربى فرّاج · لوحة التحكم</p>
           </div>
         </aside>
 
@@ -613,12 +717,12 @@ export default function AdminPage() {
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 relative transition-colors"
-                style={{ color: active ? "var(--forest)" : "var(--text-light)" }}>
+                style={{ color: active ? "var(--forest-bg)" : "var(--text-light)" }}>
                 {tab.icon}
                 <span className="text-[10px] font-medium">{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
                   <span className="absolute top-1.5 right-[calc(50%-18px)] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ background: "var(--forest)", color: "#fff" }}>
+                    style={{ background: "var(--forest-bg)", color: "#fff" }}>
                     {tab.badge}
                   </span>
                 )}
@@ -689,8 +793,91 @@ export default function AdminPage() {
                 ))}
               </div>
 
-              {/* Orders table */}
-              {ordersLoading ? <Spinner /> : orders.length === 0 ? (
+              {/* Active / archive tabs */}
+              <div className="flex gap-1 mb-5 border-b" style={{ borderColor: "var(--border)" }}>
+                {([
+                  { id: "active"  as OrdersView, label: "الطلبات", count: activeOrders.length },
+                  { id: "archive" as OrdersView, label: "الأرشيف", count: archivedOrders.length },
+                ]).map(t => {
+                  const active = ordersView === t.id;
+                  return (
+                    <button key={t.id} onClick={() => { setOrdersView(t.id); setExpandedOrder(null); }}
+                      className="flex items-center gap-2 px-4 py-2.5 text-[13px] -mb-px transition-colors"
+                      style={{
+                        color: active ? "var(--forest-bg)" : "var(--text-muted)",
+                        fontWeight: active ? 600 : 400,
+                        borderBottom: active ? "2px solid var(--forest-bg)" : "2px solid transparent",
+                      }}>
+                      {t.label}
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                        style={{ background: active ? "var(--forest-bg)" : "#eef0ec", color: active ? "#fff" : "var(--text-light)" }}>
+                        {t.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ── Archive (read-only) ── */}
+              {ordersView === "archive" && (ordersLoading ? <Spinner /> : archivedOrders.length === 0 ? (
+                <EmptyState title="الأرشيف فارغ" subtitle="الطلبات المكتملة ستظهر هنا" />
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {archivedOrders.map(order => {
+                    const isExpanded = expandedOrder === order.id;
+                    return (
+                      <div key={order.id} className="rounded-2xl border overflow-hidden"
+                        style={{ background: "#fff", borderColor: "var(--border)" }}>
+                        <div className="px-4 py-3" onClick={() => setExpandedOrder(isExpanded ? null : order.id)} style={{ cursor: "pointer" }}>
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <span className="font-semibold text-[14px]" style={{ color: "#1a2810" }}>{order.customer_name}</span>
+                            <div className="flex items-baseline gap-1 shrink-0">
+                              <span className="font-display text-[16px]" style={{ color: "var(--text-dark)" }}>{order.total}</span>
+                              <span className="text-[11px]" style={{ color: "var(--text-light)" }}>د.أ</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-[11px]" style={{ color: "var(--text-light)" }}>
+                            <span dir="ltr" style={{ fontVariantNumeric: "tabular-nums" }}>{order.customer_phone}</span>
+                            <span>{order.items.length} {order.items.length === 1 ? "منتج" : "منتجات"}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-2 text-[11px]">
+                            <StatusBadge status={order.status} />
+                            <span style={{ color: "var(--text-light)" }}>
+                              {order.completed_at ? "اكتمل في" : "تاريخ الطلب"}
+                            </span>
+                            <span dir="ltr" style={{ color: "var(--text-muted)" }}>
+                              {formatDate(order.completed_at ?? order.created_at)}
+                            </span>
+                          </div>
+                        </div>
+                        {isExpanded && (
+                          <div className="px-4 py-3 space-y-1" style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
+                            {order.items.map((item, j) => (
+                              <div key={j} className="flex items-center justify-between text-[12px]">
+                                <span style={{ color: "#1a2810" }}>{item.name_ar}</span>
+                                <span dir="ltr" style={{ color: "var(--text-muted)" }}>{item.price.toFixed(2)} × {item.quantity}</span>
+                              </div>
+                            ))}
+                            {(order.governorate || order.area || order.street_address) && (
+                              <p className="text-[11px] pt-1.5" style={{ color: "var(--text-muted)" }}>
+                                {[order.governorate, order.area, order.street_address].filter(Boolean).join("، ")}
+                              </p>
+                            )}
+                            {order.completed_at && (
+                              <p className="text-[11px]" style={{ color: "var(--text-light)" }}>
+                                تاريخ الطلب: <span dir="ltr">{formatDate(order.created_at)}</span>
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+
+              {/* ── Active orders table ── */}
+              {ordersView === "active" && (ordersLoading ? <Spinner /> : activeOrders.length === 0 ? (
                 <EmptyState title="لا توجد طلبات" subtitle="ستظهر الطلبات هنا فور وصولها" />
               ) : (
                 <>
@@ -716,32 +903,9 @@ export default function AdminPage() {
                       </tr>
                     </thead>
 
-                    {orders.map((order) => {
+                    {activeOrders.map((order) => {
                       const isExpanded = expandedOrder === order.id;
                       const [datePart, timePart] = formatDate(order.created_at).split(", ");
-
-                      const STATUS_OPTIONS: { value: Order["status"]; label: string; icon: React.ReactNode }[] = [
-                        {
-                          value: "pending", label: "جديد",
-                          icon: (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0">
-                              <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3.5 2" />
-                            </svg>
-                          ),
-                        },
-                        {
-                          value: "confirmed", label: "مؤكد",
-                          icon: (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                          ),
-                        },
-                        {
-                          value: "done", label: "تم ✓",
-                          icon: null,
-                        },
-                      ];
 
                       return (
                         <tbody key={order.id}>
@@ -802,13 +966,13 @@ export default function AdminPage() {
                                   return (
                                     <button
                                       key={opt.value}
-                                      onClick={() => updateOrderStatus(order.id, opt.value)}
+                                      onClick={() => handleStatusClick(order, opt.value)}
                                       className="flex items-center gap-1"
                                       style={{
                                         padding: "5px 9px",
                                         fontWeight: isActive ? 600 : 400,
-                                        background: isActive ? "var(--forest-pale)" : "transparent",
-                                        color: isActive ? "var(--forest)" : "var(--text-light)",
+                                        background: isActive ? STATUS_CONFIG[opt.value].bg : "transparent",
+                                        color: isActive ? STATUS_CONFIG[opt.value].color : "var(--text-light)",
                                         borderLeft: idx > 0 ? "1px solid var(--border)" : "none",
                                         transition: "background 0.15s, color 0.15s",
                                         whiteSpace: "nowrap",
@@ -992,7 +1156,7 @@ export default function AdminPage() {
 
                 {/* ── Mobile / tablet cards ── */}
                 <div className="md:hidden space-y-3">
-                  {orders.map(order => {
+                  {activeOrders.map(order => {
                     const isExpanded = expandedOrder === order.id;
                     const [datePart, timePart] = formatDate(order.created_at).split(", ");
                     return (
@@ -1033,17 +1197,13 @@ export default function AdminPage() {
                           style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
                           <div className="inline-flex rounded-xl overflow-hidden"
                             style={{ border: "1px solid var(--border)", fontSize: 11 }}>
-                            {([
-                              { value: "pending"   as Order["status"], label: "جديد", icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M12 6v6l3.5 2"/></svg>) },
-                              { value: "confirmed" as Order["status"], label: "مؤكد", icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>) },
-                              { value: "done"      as Order["status"], label: "تم",   icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4"/></svg>) },
-                            ] as { value: Order["status"]; label: string; icon: React.ReactNode }[]).map((opt, idx) => {
+                            {STATUS_OPTIONS.map((opt, idx) => {
                               const isActive = order.status === opt.value;
                               return (
                                 <button key={opt.value}
-                                  onClick={() => updateOrderStatus(order.id, opt.value)}
+                                  onClick={() => handleStatusClick(order, opt.value)}
                                   className="flex items-center gap-1"
-                                  style={{ padding: "5px 9px", background: isActive ? "var(--forest-pale)" : "transparent", color: isActive ? "var(--forest)" : "var(--text-light)", fontWeight: isActive ? 600 : 400, borderLeft: idx > 0 ? "1px solid var(--border)" : "none", whiteSpace: "nowrap" }}>
+                                  style={{ padding: "5px 9px", background: isActive ? STATUS_CONFIG[opt.value].bg : "transparent", color: isActive ? STATUS_CONFIG[opt.value].color : "var(--text-light)", fontWeight: isActive ? 600 : 400, borderLeft: idx > 0 ? "1px solid var(--border)" : "none", whiteSpace: "nowrap" }}>
                                   {opt.icon}{opt.label}
                                 </button>
                               );
@@ -1157,7 +1317,7 @@ export default function AdminPage() {
                   })}
                 </div>
                 </>
-              )}
+              ))}
             </div>
           )}
 
@@ -1192,7 +1352,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => { setEditProduct(null); setShowProductForm(true); }}
                   className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-xl transition-opacity hover:opacity-80"
-                  style={{ background: "var(--forest)", color: "#fff" }}>
+                  style={{ background: "var(--forest-bg)", color: "#fff" }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path strokeLinecap="round" d="M12 5v14M5 12h14"/></svg>
                   إضافة منتج
                 </button>
@@ -1394,7 +1554,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => { setEditCategory(null); setShowCategoryForm(true); }}
                   className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-xl transition-opacity hover:opacity-80"
-                  style={{ background: "var(--forest)", color: "#fff" }}>
+                  style={{ background: "var(--forest-bg)", color: "#fff" }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path strokeLinecap="round" d="M12 5v14M5 12h14"/></svg>
                   إضافة قسم
                 </button>
@@ -1550,6 +1710,16 @@ export default function AdminPage() {
           loading={deleteLoading}
           onConfirm={handleConfirmDelete}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {/* ── Confirm archive dialog ── */}
+      {confirmArchive && (
+        <ConfirmArchiveDialog
+          name={confirmArchive.customer_name}
+          loading={archiveLoading}
+          onConfirm={handleConfirmArchive}
+          onCancel={() => setConfirmArchive(null)}
         />
       )}
 

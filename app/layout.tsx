@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans_Arabic, Amiri, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import Providers from "./_components/Providers";
+import { SITE_URL } from "./_lib/site";
 
 const ibm = IBM_Plex_Sans_Arabic({
   variable: "--font-ibm",
@@ -25,23 +26,22 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
-const SITE_URL = "https://rubafarraj.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: "RUBA BOTANICAL | حناء وأعشاب طبيعية أردنية",
-    template: "%s | RUBA BOTANICAL",
+    default: "Ruba Farraj Botanicals | ربى فرّاج",
+    template: "%s | Ruba Farraj Botanicals",
   },
   description:
-    "من الطبيعة تبدأ العناية الآمنة ويزهر الجمال — حناء، أعشاب ومكوّنات طبيعية مختارة بعناية ومدروسة بثقة. نقش حناء، حناء شعر، عناية طبيعية من قلب عمّان.",
+    "منتجات طبيعية من ربى فرّاج للعناية بالشعر والجسم، وحناء نقية، بتركيبات مدروسة بخبرة علمية. جمال آمن يبدأ من الطبيعة.",
 
   keywords: [
     "حناء طبيعية",
     "حناء أردنية",
-    "ربى بوتانيكال",
-    "Ruba Botanical",
+    "ربى فرّاج بوتانيكالز",
+    "Ruba Farraj Botanicals",
     "حناء نقش",
     "حناء شعر",
     "أعشاب طبيعية",
@@ -55,18 +55,11 @@ export const metadata: Metadata = {
     "herbal hair care",
   ],
 
-  authors: [{ name: "Ruba Botanical", url: SITE_URL }],
-  creator: "Ruba Botanical",
-  publisher: "RUBA BOTANICAL",
+  authors: [{ name: "Ruba Farraj Botanicals", url: SITE_URL }],
+  creator: "Ruba Farraj Botanicals",
+  publisher: "Ruba Farraj Botanicals",
 
   category: "Beauty & Personal Care",
-
-  alternates: {
-    canonical: "/",
-    languages: {
-      "ar-JO": "/",
-    },
-  },
 
   robots: {
     index: true,
@@ -84,23 +77,16 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ar_JO",
     url: SITE_URL,
-    siteName: "RUBA BOTANICAL",
-    title: "RUBA BOTANICAL | حناء وأعشاب طبيعية أردنية",
+    siteName: "Ruba Farraj Botanicals",
+    title: "Ruba Farraj Botanicals | ربى فرّاج",
     description:
-      "من الطبيعة تبدأ العناية الآمنة ويزهر الجمال — حناء، أعشاب ومكوّنات طبيعية مختارة بعناية ومدروسة بثقة.",
+      "منتجات طبيعية للعناية بالشعر والجسم، وحناء نقية، بتركيبات مدروسة بخبرة علمية. جمال آمن يبدأ من الطبيعة.",
     images: [
       {
-        url: "/images/hero-henna-products.jpg",
-        width: 1200,
-        height: 630,
-        alt: "RUBA BOTANICAL — حناء وأعشاب طبيعية أردنية",
-        type: "image/jpeg",
-      },
-      {
-        url: "/images/henna-naqsh-gold.jpg",
-        width: 1200,
-        height: 630,
-        alt: "حناء نقش ذهبي — ربى بوتانيكال",
+        url: "/images/og-image.jpg",
+        width: 1600,
+        height: 837,
+        alt: "Ruba Farraj Botanicals | ربى فرّاج",
         type: "image/jpeg",
       },
     ],
@@ -108,21 +94,16 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "RUBA BOTANICAL | حناء وأعشاب طبيعية أردنية",
+    title: "Ruba Farraj Botanicals | ربى فرّاج",
     description:
-      "من الطبيعة تبدأ العناية الآمنة ويزهر الجمال — حناء وأعشاب طبيعية مختارة بعناية.",
-    images: ["/images/hero-henna-products.jpg"],
-    creator: "@rubafarrajhenna",
-  },
-
-  verification: {
-    google: "",
+      "منتجات طبيعية للعناية بالشعر والجسم، وحناء نقية، بتركيبات مدروسة بخبرة علمية. جمال آمن يبدأ من الطبيعة.",
+    images: ["/images/og-image.jpg"],
   },
 
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "RUBA BOTANICAL",
+    title: "Ruba Farraj Botanicals",
   },
 
   formatDetection: {
@@ -138,17 +119,17 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "Organization",
+      "@type": "OnlineStore",
       "@id": `${SITE_URL}/#organization`,
-      name: "RUBA BOTANICAL",
-      alternateName: "ربى بوتانيكال",
+      name: "Ruba Farraj Botanicals",
+      alternateName: "ربى فرّاج بوتانيكالز",
       url: SITE_URL,
       logo: {
         "@type": "ImageObject",
-        url: `${SITE_URL}/images/ruba-logo.png`,
+        url: `${SITE_URL}/images/ruba-logo-google.png`,
       },
       description:
-        "من الطبيعة تبدأ العناية الآمنة ويزهر الجمال — حناء وأعشاب طبيعية مختارة بعناية ومدروسة بثقة.",
+        "منتجات طبيعية للعناية بالشعر والجسم، وحناء نقية، بتركيبات مدروسة بخبرة علمية. جمال آمن يبدأ من الطبيعة.",
       foundingLocation: {
         "@type": "Place",
         name: "عمّان، الأردن",
@@ -169,52 +150,13 @@ const jsonLd = {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
-      name: "RUBA BOTANICAL",
+      name: "Ruba Farraj Botanicals",
       description:
-        "حناء وأعشاب طبيعية أردنية — نقش، شعر، عناية طبيعية من قلب عمّان",
+        "منتجات طبيعية للعناية بالشعر والجسم، وحناء نقية، بتركيبات مدروسة بخبرة علمية.",
       publisher: {
         "@id": `${SITE_URL}/#organization`,
       },
       inLanguage: "ar-JO",
-    },
-    {
-      "@type": "LocalBusiness",
-      "@id": `${SITE_URL}/#localbusiness`,
-      name: "RUBA BOTANICAL",
-      alternateName: "ربى بوتانيكال",
-      image: `${SITE_URL}/images/hero-henna-products.jpg`,
-      url: SITE_URL,
-      telephone: "+962789795740",
-      priceRange: "$$",
-      address: {
-        "@type": "PostalAddress",
-        addressLocality: "عمّان",
-        addressCountry: "JO",
-      },
-      geo: {
-        "@type": "GeoCoordinates",
-        latitude: 31.9454,
-        longitude: 35.9284,
-      },
-      openingHoursSpecification: {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: [
-          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
-        ],
-        opens: "09:00",
-        closes: "21:00",
-      },
-      servesCuisine: "Natural Beauty & Henna",
-      hasOfferCatalog: {
-        "@type": "OfferCatalog",
-        name: "منتجات ربى بوتانيكال",
-        itemListElement: [
-          { "@type": "Offer", itemOffered: { "@type": "Service", name: "حناء النقش" } },
-          { "@type": "Offer", itemOffered: { "@type": "Product", name: "حناء الشعر الطبيعية" } },
-          { "@type": "Offer", itemOffered: { "@type": "Product", name: "العناية الطبيعية بالشعر" } },
-          { "@type": "Offer", itemOffered: { "@type": "Product", name: "العناية الطبيعية بالجسم" } },
-        ],
-      },
     },
   ],
 };
@@ -237,7 +179,6 @@ export default function RootLayout({
         />
         <meta name="theme-color" content="#2d4a2d" />
         <meta name="msapplication-TileColor" content="#2d4a2d" />
-        <link rel="canonical" href={SITE_URL} />
       </head>
       <body className="grain antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>

@@ -210,7 +210,7 @@ export default function BestSellers() {
                             backdropFilter: "blur(8px)",
                             WebkitBackdropFilter: "blur(8px)",
                             border: "1px solid rgba(255,255,255,0.7)",
-                            color: "var(--forest)",
+                            color: "#1c3a1a",
                             fontSize: "var(--fs-eyebrow)",
                             letterSpacing: "0.02em",
                             padding: "3px 10px",
@@ -344,7 +344,7 @@ export default function BestSellers() {
                           }}
                           onMouseEnter={(e) => {
                             const el = e.currentTarget as HTMLElement;
-                            el.style.background = "var(--forest)";
+                            el.style.background = "var(--forest-bg)";
                             el.style.color = "#fff";
                           }}
                           onMouseLeave={(e) => {

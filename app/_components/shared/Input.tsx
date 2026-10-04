@@ -15,7 +15,7 @@ const Input = forwardRef<HTMLInputElement, Props>(({ label, error, className, ..
       ref={ref}
       className={cn(
         'w-full rounded-lg px-3 py-2.5 text-[13px]',
-        'bg-white border border-[var(--border-mid)]',
+        'bg-[var(--white)] border border-[var(--border-mid)]',
         'text-[var(--text-1)] placeholder:text-[var(--text-3)]',
         'focus:outline-none focus:border-[var(--forest)]',
         'transition-colors duration-150',

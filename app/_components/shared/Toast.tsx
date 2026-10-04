@@ -13,7 +13,7 @@ export default function Toast({ message, onDone }: ToastProps) {
     <div
       className="fixed bottom-6 left-1/2 z-50 px-5 py-2.5 rounded-full text-[12px] font-medium shadow-lg transition-all duration-300"
       style={{
-        background: 'var(--forest)',
+        background: 'var(--forest-bg)',
         color: '#e8f4e0',
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(8px)',

@@ -2,6 +2,13 @@ import { Suspense } from "react";
 import Navbar from "../_components/Navbar";
 import Footer from "../_components/Footer";
 import ProductPageClient from "./ProductPageClient";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "جميع المنتجات",
+  description: "تسوّقي منتجات ربى فرّاج الطبيعية للعناية بالشعر والجسم، والحناء النقية، بتركيبات مدروسة بخبرة علمية.",
+  alternates: { canonical: "/products" },
+};
 
 export default function Page({
   searchParams,

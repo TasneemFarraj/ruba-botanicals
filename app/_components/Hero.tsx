@@ -75,17 +75,17 @@ export default function Hero() {
       />
 
       {/* Desktop overlay — right-side heavy */}
-      <div className="he-overlay absolute inset-0" style={{ background: "rgba(218,232,215,0.28)" }} />
+      <div className="he-overlay absolute inset-0" style={{ background: "rgba(var(--hero-tint-rgb), var(--hero-dim))" }} />
       <div className="he-overlay hidden md:block absolute inset-0" style={{
-        background: "linear-gradient(to left, rgba(212,230,208,0.92) 0%, rgba(212,230,208,0.55) 36%, rgba(212,230,208,0.06) 65%, transparent 100%)",
+        background: "linear-gradient(to left, rgba(var(--hero-tint-rgb),0.92) 0%, rgba(var(--hero-tint-rgb),0.55) 36%, rgba(var(--hero-tint-rgb),0.06) 65%, transparent 100%)",
       }} />
       <div className="he-overlay absolute inset-x-0 top-0 z-10" style={{
         height: 150,
-        background: "linear-gradient(to bottom, rgba(218,232,215,0.72) 0%, transparent 100%)",
+        background: "linear-gradient(to bottom, rgba(var(--hero-tint-rgb),0.72) 0%, transparent 100%)",
       }} />
       {/* Mobile overlay — top-heavy where text lives */}
       <div className="he-overlay md:hidden absolute inset-0" style={{
-        background: "linear-gradient(to bottom, rgba(212,230,208,0.94) 0%, rgba(212,230,208,0.82) 35%, rgba(212,230,208,0.35) 60%, transparent 100%)",
+        background: "linear-gradient(to bottom, rgba(var(--hero-tint-rgb),0.94) 0%, rgba(var(--hero-tint-rgb),0.82) 35%, rgba(var(--hero-tint-rgb),0.35) 60%, transparent 100%)",
       }} />
 
       {/* Text block — top on mobile, bottom-right on desktop */}
@@ -132,7 +132,7 @@ export default function Hero() {
           className="he-cta"
           style={{
             fontSize: "clamp(0.92rem, 1.4vw, 1.1rem)",
-            color: "rgba(30,55,25,0.72)",
+            color: "rgba(var(--hero-ink-rgb),0.72)",
             lineHeight: 1.9,
             marginBottom: "1.5rem",
             fontFamily: "var(--font-display), Georgia, serif",
@@ -181,7 +181,7 @@ export default function Hero() {
         <div
           className="he-stat flex items-center"
           style={{
-            borderTop: "1px solid rgba(30,70,25,0.18)",
+            borderTop: "1px solid rgba(var(--hero-ink-rgb),0.18)",
             paddingTop: "0.9rem",
             gap: 0,
           }}
@@ -192,7 +192,7 @@ export default function Hero() {
                 <div dir="ltr"><CountUp value={value} suffix={suffix} /></div>
                 <p style={{
                   fontSize: 10,
-                  color: "rgba(30,55,25,0.5)",
+                  color: "rgba(var(--hero-ink-rgb),0.5)",
                   marginTop: 4,
                   letterSpacing: "0.06em",
                   fontWeight: 600,
@@ -201,7 +201,7 @@ export default function Hero() {
                 </p>
               </div>
               {i < STATS.length - 1 && (
-                <span style={{ width: 1, height: 26, background: "rgba(30,70,25,0.15)", flexShrink: 0 }} />
+                <span style={{ width: 1, height: 26, background: "rgba(var(--hero-ink-rgb),0.15)", flexShrink: 0 }} />
               )}
             </Fragment>
           ))}
@@ -245,7 +245,7 @@ function TypewriterChar({ text, startDelay = 0, speed = 48 }: {
           display: "inline-block",
           width: 2,
           height: "0.75em",
-          background: "rgba(30,55,25,0.6)",
+          background: "rgba(var(--hero-ink-rgb),0.6)",
           marginRight: 3,
           verticalAlign: "middle",
           borderRadius: 1,

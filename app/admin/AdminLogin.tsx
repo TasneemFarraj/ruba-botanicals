@@ -50,7 +50,7 @@ export default function AdminLogin() {
           </svg>
           <div className="text-center">
             <h1 className="font-display" style={{ fontSize: 28, fontWeight: 400, color: "var(--forest)", lineHeight: 1 }}>
-              ربى للحناء
+              ربى فرّاج
             </h1>
             <p style={{ fontSize: 10, color: "var(--text-3)", letterSpacing: "0.18em", textTransform: "uppercase", marginTop: 4 }}>
               لوحة التحكم
@@ -112,7 +112,7 @@ export default function AdminLogin() {
             disabled={loading}
             className="w-full rounded-xl font-semibold transition-opacity disabled:opacity-50"
             style={{
-              background: "var(--forest)",
+              background: "var(--forest-bg)",
               color: "#e8f4e0",
               padding: "11px 0",
               fontSize: 13,

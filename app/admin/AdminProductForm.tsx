@@ -336,7 +336,7 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
                   type="button"
                   onClick={addStep}
                   className="text-[11px] px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
-                  style={{ background: "var(--forest)", color: "#fff" }}
+                  style={{ background: "var(--forest-bg)", color: "#fff" }}
                 >
                   + خطوة
                 </button>
@@ -438,7 +438,7 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
                   type="button"
                   onClick={addStep}
                   className="text-[11px] px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
-                  style={{ background: "var(--forest)", color: "#fff" }}
+                  style={{ background: "var(--forest-bg)", color: "#fff" }}
                 >
                   + خطوة
                 </button>
@@ -542,7 +542,7 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
                   <div
                     onClick={() => setForm(f => ({ ...f, [key]: !f[key] }))}
                     className="w-10 h-5 rounded-full transition-colors duration-200 relative shrink-0"
-                    style={{ background: form[key] ? "var(--forest-mid)" : "#d1d5db" }}
+                    style={{ background: form[key] ? "var(--forest-bg-mid)" : "#d1d5db" }}
                   >
                     <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all duration-200"
                       style={{ right: form[key] ? "2px" : "auto", left: form[key] ? "auto" : "2px" }} />
@@ -561,7 +561,7 @@ export default function AdminProductForm({ product, categories, onClose, onSucce
             form="product-form"
             disabled={loading}
             className="w-full py-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: "var(--forest)", color: "#fff" }}
+            style={{ background: "var(--forest-bg)", color: "#fff" }}
           >
             {loading ? "جاري الحفظ..." : product ? "حفظ التعديلات" : "إضافة المنتج"}
           </button>
