@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ForceLight } from "./_ui/force-light";
+import AdminApp from "./_components/AdminApp";
 
 export const metadata: Metadata = {
   title: "لوحة التحكم | ربى فرّاج",
@@ -10,7 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div data-theme="light" style={{ color: "var(--text-1)" }}>
       <ForceLight />
-      {children}
+      <AdminApp>{children}</AdminApp>
     </div>
   );
 }

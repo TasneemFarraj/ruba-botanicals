@@ -11,6 +11,8 @@ import { useCart } from "./CartProvider";
 import { ui } from "../_lib/translations";
 import EmptyState from "./shared/EmptyState";
 import DotPaginator from "./shared/DotPaginator";
+import { PriceTag, DiscountBadge } from "./shared/PriceTag";
+import AddToCartButton from "./shared/AddToCartButton";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -219,6 +221,7 @@ export default function BestSellers() {
                         >
                           {t.badge}
                         </span>
+                        <DiscountBadge product={p} className="absolute top-2.5 end-2.5 z-10" />
 
                         {p.image_url && (
                           <Image
@@ -286,7 +289,7 @@ export default function BestSellers() {
 
                       {/* Name */}
                       <h3
-                        className="font-display leading-snug mb-0.5 truncate text-center px-1"
+                        className="font-display leading-snug mb-0.5 truncate px-1"
                         style={{
                           fontSize: "var(--fs-card)",
                           color: "var(--text-dark)",
@@ -296,75 +299,32 @@ export default function BestSellers() {
                       </h3>
                       {p.unit && (
                         <p
-                          className="text-center mb-2"
+                          className="px-1 mb-2"
                           style={{
                             fontSize: "var(--fs-xs)",
-                            color: "var(--text-light)",
+                            color: "var(--text-2)",
                           }}
                         >
                           {p.unit}
                         </p>
                       )}
 
-                      {/* Price + quick-add */}
-                      <div className="flex items-center justify-between px-1 mt-auto">
-                        <span
-                          style={{
-                            fontSize: "var(--fs-base)",
-                            fontWeight: 600,
-                            color: "var(--forest)",
-                          }}
-                        >
-                          {p.price}{" "}
-                          <span
-                            style={{
-                              fontSize: "var(--fs-xs)",
-                              fontWeight: 400,
-                              color: "var(--text-light)",
-                            }}
-                          >
-                            د.أ
-                          </span>
-                        </span>
-                        <button
+                      {/* Price + add */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap px-1 mt-auto pt-1">
+                        <PriceTag product={p} size={17} />
+                        <AddToCartButton
+                          disabled={!p.price}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (!p.price) return;
                             addItem({
                               id: p.id,
                               name_ar: p.name_ar,
-                              price: p.price ?? 0,
+                              price: p.price,
                               image_url: p.image_no_bg_url ?? p.image_url,
                             });
                           }}
-                          className="w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200"
-                          style={{
-                            border: "1px solid var(--border-mid)",
-                            background: "transparent",
-                            color: "var(--text-muted)",
-                          }}
-                          onMouseEnter={(e) => {
-                            const el = e.currentTarget as HTMLElement;
-                            el.style.background = "var(--forest-bg)";
-                            el.style.color = "#fff";
-                          }}
-                          onMouseLeave={(e) => {
-                            const el = e.currentTarget as HTMLElement;
-                            el.style.background = "transparent";
-                            el.style.color = "var(--text-muted)";
-                          }}
-                        >
-                          <svg
-                            width="10"
-                            height="10"
-                            viewBox="0 0 10 10"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          >
-                            <path d="M5 1v8M1 5h8" />
-                          </svg>
-                        </button>
+                        />
                       </div>
                     </div>
                   ))}

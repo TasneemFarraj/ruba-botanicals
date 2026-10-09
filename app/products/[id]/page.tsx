@@ -6,14 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 
-import { getProductById, getCategoryById, getRelatedProducts } from "@/app/_lib/supabase";
+import { getProductById, getCategoryById, getRelatedProducts, getProductImages, getFeedbackImages } from "@/app/_lib/supabase";
 import { useCart } from "@/app/_components/CartProvider";
-import { fmtPrice } from "@/app/_lib/utils";
+import { fmtPrice, getDiscount } from "@/app/_lib/utils";
+import { DiscountBadge } from "@/app/_components/shared/PriceTag";
 import Navbar from "@/app/_components/Navbar";
 import Footer from "@/app/_components/Footer";
 import ProductCard from "@/app/_components/ProductCard";
 import EmptyState from "@/app/_components/shared/EmptyState";
-import type { Product, Category } from "@/app/_types";
+import type { Product, Category, ProductImage, FeedbackImage } from "@/app/_types";
 
 
 export default function ProductDetailPage({
@@ -25,6 +26,10 @@ export default function ProductDetailPage({
   const [product, setProduct] = useState<Product | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
+  const [gallery, setGallery] = useState<ProductImage[]>([]);
+  const [feedback, setFeedback] = useState<FeedbackImage[]>([]);
+  const [activeImg, setActiveImg] = useState(0);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -35,17 +40,20 @@ export default function ProductDetailPage({
 
   useEffect(() => {
     setLoading(true);
-    getProductById(id).then(async (p) => {
+    // Gallery + feedback only need the id, so they load alongside the product
+    Promise.all([getProductById(id), getProductImages(id), getFeedbackImages(id)]).then(([p, imgs, fb]) => {
       setProduct(p);
-      if (p) {
-        const [cat, rel] = await Promise.all([
-          getCategoryById(p.category_id),
-          getRelatedProducts(p.category_id, p.id),
-        ]);
-        setCategory(cat);
-        setRelated(rel);
-      }
+      setGallery(imgs);
+      setFeedback(fb);
+      setActiveImg(0);
       setLoading(false);
+      if (p) {
+        // Category + related render below the fold — fill them in without blocking the page
+        Promise.all([getCategoryById(p.category_id), getRelatedProducts(p.category_id, p.id)]).then(([cat, rel]) => {
+          setCategory(cat);
+          setRelated(rel);
+        });
+      }
     });
   }, [id]);
 
@@ -65,19 +73,22 @@ export default function ProductDetailPage({
 
   const handleAddToCart = () => {
     if (!product || !product.price) return;
-    for (let i = 0; i < qty; i++) {
-      addItem({
-        id: product.id,
-        name_ar: product.name_ar,
-        price: product.price,
-        image_url: product.image_no_bg_url ?? product.image_url,
-      });
-    }
+    addItem({
+      id: product.id,
+      name_ar: product.name_ar,
+      price: product.price,
+      image_url: product.image_no_bg_url ?? product.image_url,
+    }, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2200);
   };
 
-  const imgSrc = product?.image_no_bg_url ?? product?.image_url;
+  // Gallery (first image = main) when uploaded, otherwise the single product image
+  const images = gallery.length > 0
+    ? gallery.map(g => g.image_url)
+    : [product?.image_no_bg_url ?? product?.image_url].filter((u): u is string => !!u);
+  const imgSrc = images[Math.min(activeImg, images.length - 1)];
+  const discount = product ? getDiscount(product) : null;
   const hasPrice = (product?.price ?? 0) > 0;
   const hasDetails = product
     ? (product.how_to_use_ar != null && product.how_to_use_ar.length > 0) ||
@@ -115,6 +126,7 @@ export default function ProductDetailPage({
               <div className="mb-2">
                 <div className="flex items-center gap-3 mb-5 flex-wrap">
                   {product.is_best_seller && <span className="badge badge-bestseller">الأكثر مبيعاً</span>}
+                  <DiscountBadge product={product} />
                   {!product.in_stock && <span className="badge" style={{ background: "var(--surface-card)", color: "var(--text-3)", border: "1px solid var(--border-mid)" }}>نفد من المخزون</span>}
                   {product.name_en && (
                     <span className="text-[11px] tracking-widest uppercase" style={{ color: "var(--text-3)", fontFamily: "var(--font-display), Georgia, serif" }}>
@@ -155,9 +167,14 @@ export default function ProductDetailPage({
               <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-start">
 
                 {/* Image — RIGHT in RTL */}
-                <div className="shrink-0 order-1 mx-auto md:mx-0 md:w-[30%]" style={{ width: "min(100%, 280px)" }}>
-                  <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
-                    {imgSrc ? (
+                <div className="shrink-0 order-1 mx-auto md:mx-0 md:w-[34%]" style={{ width: "min(100%, 340px)" }}>
+                  {imgSrc ? (
+                    <ZoomFrame
+                      scale={2.2}
+                      onOpen={() => setLightbox(imgSrc)}
+                      className="relative w-full rounded-2xl"
+                      style={{ aspectRatio: "1 / 1" }}
+                    >
                       <Image
                         src={imgSrc}
                         alt={product.name_ar}
@@ -165,12 +182,33 @@ export default function ProductDetailPage({
                         priority
                         className="object-contain"
                         style={{ filter: "drop-shadow(0 12px 40px rgba(28,58,26,0.14))" }}
-                        sizes="(max-width: 768px) 100vw, 34vw"
+                        sizes="(max-width: 768px) 100vw, 680px"
                       />
-                    ) : (
+                    </ZoomFrame>
+                  ) : (
+                    <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
                       <PlaceholderBranch />
-                    )}
-                  </div>
+                    </div>
+                  )}
+                  {images.length > 1 && (
+                    <div className="flex gap-2 mt-4 flex-wrap justify-center md:justify-start">
+                      {images.map((src, i) => (
+                        <button
+                          key={src}
+                          onClick={() => setActiveImg(i)}
+                          aria-label={`صورة ${i + 1}`}
+                          className="relative w-14 h-14 rounded-xl overflow-hidden transition-[opacity,transform] duration-200 hover:scale-110 hover:!opacity-100"
+                          style={{
+                            background: "var(--surface-card)",
+                            border: i === activeImg ? "2px solid var(--forest-light)" : "1px solid var(--border-mid)",
+                            opacity: i === activeImg ? 1 : 0.75,
+                          }}
+                        >
+                          <Image src={src} alt="" fill className="object-contain p-1" sizes="56px" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Description + purchase — LEFT in RTL, dominant */}
@@ -197,6 +235,11 @@ export default function ProductDetailPage({
                       <span className="font-display" style={{ fontSize: "clamp(1.4rem, 2vw, 1.8rem)", color: "var(--gold)" }}>
                         {fmtPrice(product.price!)}
                       </span>
+                      {discount && (
+                        <s className="tabular-nums" style={{ fontSize: "clamp(1rem, 1.4vw, 1.2rem)", color: "var(--text-2)" }}>
+                          {fmtPrice(discount.original)}
+                        </s>
+                      )}
                       {product.unit && (
                         <span className="text-[11px] tracking-widest" style={{ color: "var(--text-3)" }}>· {product.unit}</span>
                       )}
@@ -396,6 +439,45 @@ export default function ProductDetailPage({
             )}
 
             {/* ══════════════════════════════════════════
+                Customer feedback
+            ══════════════════════════════════════════ */}
+            {feedback.length > 0 && (
+              <section style={{ background: "var(--surface)" }}>
+                <div className="max-w-[1240px] mx-auto px-6 md:px-10 py-14 md:py-20">
+                  <span className="eyebrow">آراء زبوناتنا</span>
+                  <h2 className="font-display mb-8" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.9rem)", color: "var(--forest-mid)" }}>
+                    تجارب حقيقية مع المنتج
+                  </h2>
+                  <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
+                    {feedback.map((f) => (
+                      <div
+                        key={f.id}
+                        className="w-full mb-4 break-inside-avoid rounded-2xl overflow-hidden"
+                        style={{ background: "var(--white)", border: "1px solid var(--border)" }}
+                      >
+                        <ZoomFrame scale={1.8} onOpen={() => setLightbox(f.image_url)} className="relative w-full">
+                          <Image
+                            src={f.image_url}
+                            alt={f.customer_name ? `فيدباك من ${f.customer_name}` : "فيدباك زبونة"}
+                            width={600}
+                            height={600}
+                            className="w-full h-auto"
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                          />
+                        </ZoomFrame>
+                        {f.customer_name && (
+                          <p className="px-3 py-2 text-[14px] font-medium" style={{ color: "var(--text-1)" }}>
+                            {f.customer_name}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* ══════════════════════════════════════════
                 Related products
             ══════════════════════════════════════════ */}
             {related.length > 0 && (
@@ -441,7 +523,7 @@ export default function ProductDetailPage({
               position: "fixed",
               bottom: 0,
               left: 0,
-              right: 0,
+              right: "var(--cart-dock)",
               zIndex: 40,
               background: "var(--white)",
               borderTop: "1px solid var(--border)",
@@ -454,6 +536,9 @@ export default function ProductDetailPage({
               <p className="flex-1 min-w-0 text-[12px] truncate" style={{ color: "var(--text-2)" }}>
                 {product.name_ar}
               </p>
+              {discount && (
+                <s className="hidden sm:inline shrink-0 text-[12px] tabular-nums" style={{ color: "var(--text-2)" }}>{discount.original}</s>
+              )}
               <span className="font-display shrink-0 text-[14px]" style={{ color: "var(--gold)" }}>
                 {fmtPrice(product.price!)}
               </span>
@@ -503,6 +588,27 @@ export default function ProductDetailPage({
             </div>
           </div>
         )}
+        {/* Feedback lightbox */}
+        {lightbox && (
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.82)" }}
+            onClick={() => setLightbox(null)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <button
+              onClick={() => setLightbox(null)}
+              aria-label="إغلاق"
+              className="absolute top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center text-white text-[22px]"
+              style={{ background: "rgba(255,255,255,0.14)" }}
+            >
+              ×
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={lightbox} alt="" className="max-w-full max-h-[90vh] rounded-xl object-contain" />
+          </div>
+        )}
       </main>
       <Footer />
     </>
@@ -535,6 +641,44 @@ function QtyBtn({
   );
 }
 
+
+/** Magnifies its image under the cursor on hover (desktop); click/tap opens it full size */
+function ZoomFrame({
+  children, scale, onOpen, className, style,
+}: {
+  children: React.ReactElement<{ style?: React.CSSProperties }>;
+  scale: number;
+  onOpen: () => void;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const [origin, setOrigin] = useState<string | null>(null);
+  const track = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setOrigin(`${((e.clientX - r.left) / r.width) * 100}% ${((e.clientY - r.top) / r.height) * 100}%`);
+  };
+  const child = React.cloneElement(children, {
+    style: {
+      ...children.props.style,
+      transform: origin ? `scale(${scale})` : "scale(1)",
+      transformOrigin: origin ?? "center",
+      transition: "transform 0.25s ease-out",
+    },
+  });
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      onMouseMove={track}
+      onMouseLeave={() => setOrigin(null)}
+      aria-label="تكبير الصورة"
+      className={`block overflow-hidden cursor-zoom-in ${className ?? ""}`}
+      style={style}
+    >
+      {child}
+    </button>
+  );
+}
 
 function ChevronSep() {
   return <span style={{ opacity: 0.4, fontSize: 10 }}>/</span>;

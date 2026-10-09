@@ -18,10 +18,10 @@
   --gold:         #b07d2e;
   --gold-pale:    #f5e9d3;
 
-  /* Text — original values */
+  /* Text — darkened for readability (no very light greys) */
   --text-1: #1a2810;
-  --text-2: #5c7050;
-  --text-3: #8aaa80;
+  --text-2: #3f5236;
+  --text-3: #5d7353;
 
   /* Border — original values */
   --border:     rgba(77,124,31,0.1);
@@ -38,11 +38,11 @@
   --nav-glass:   rgba(253,248,243,0.97);
 
   /* Typography scale */
-  --fs-eyebrow: 10px;
-  --fs-xs:      11px;
-  --fs-sm:      13px;
-  --fs-base:    14px;
-  --fs-card:    15px;
+  --fs-eyebrow: 11px;
+  --fs-xs:      12px;
+  --fs-sm:      14px;
+  --fs-base:    15.5px;
+  --fs-card:    16px;
   --fs-h3:      clamp(1rem, 1.5vw, 1.15rem);
   --fs-h2:      clamp(1.3rem, 2.4vw, 1.8rem);
   --fs-h1:      clamp(2rem, 6vw, 5.5rem);
@@ -76,14 +76,14 @@
   --color-surface-card: #f8f9f7;
   --color-gold:         #b07d2e;
   --color-text-1:       #1a2810;
-  --color-text-2:       #5c7050;
-  --color-text-3:       #8aaa80;
+  --color-text-2:       #3f5236;
+  --color-text-3:       #5d7353;
   --color-cream:        #fdf8f3;
   --color-cream-card:   #f8f9f7;
   --color-white:        #ffffff;
   --color-text-dark:    #1a2810;
-  --color-text-muted:   #5c7050;
-  --color-text-light:   #8aaa80;
+  --color-text-muted:   #3f5236;
+  --color-text-light:   #5d7353;
   --color-gold-light:   #f5e9d3;
 
   --font-display: var(--font-display);
@@ -117,8 +117,8 @@
   --gold-pale:    rgba(176, 125, 46, 0.14);
 
   --text-1:  #deebd8;
-  --text-2:  #8aaa80;
-  --text-3:  #74906c;
+  --text-2:  #b4c9ab;
+  --text-3:  #9db394;
 
   --border:     rgba(77, 124, 31, 0.22);
   --border-mid: rgba(77, 124, 31, 0.32);
@@ -137,6 +137,7 @@ html { background: var(--white); direction: rtl; }
 body {
   font-family: var(--font-ibm), "IBM Plex Sans Arabic", sans-serif;
   font-size: var(--fs-base);
+  font-weight: 500;
   color: var(--text-1);
   background: var(--white);
   overflow-x: hidden;
@@ -144,6 +145,14 @@ body {
 }
 
 a, button { cursor: pointer; }
+
+/* Cart drawer width; on lg+ the open cart docks and the page makes room for it */
+:root { --cart-w: 440px; --cart-dock: 0px; }
+@media (min-width: 1024px) {
+  html.cart-docked { --cart-dock: var(--cart-w); }
+  html.cart-docked body { padding-right: var(--cart-dock); }
+}
+body { transition: padding-right 400ms cubic-bezier(0.32,0,0.15,1); }
 
 /* Lenis */
 html.lenis, html.lenis body { height: auto; }
@@ -226,7 +235,7 @@ html.lenis, html.lenis body { height: auto; }
 /* Section eyebrow */
 .eyebrow {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-eyebrow);
   color: var(--gold);
   letter-spacing: 0.18em;
   text-transform: uppercase;

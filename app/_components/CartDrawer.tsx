@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import {
   X, ArrowRight, ChevronLeft, ChevronDown,
@@ -111,6 +111,23 @@ export default function CartDrawer() {
   const [error,   setError]   = useState("");
   const [done,    setDone]    = useState(false);
   const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pathname  = usePathname();
+
+  /* Desktop (lg+): the open cart docks as a fixed side panel — no backdrop,
+     the page shifts over (html.cart-docked) and stays usable while it is open */
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const docked = isDesktop && isOpen && !pathname.startsWith("/admin");
+  useEffect(() => {
+    document.documentElement.classList.toggle("cart-docked", docked);
+    return () => document.documentElement.classList.remove("cart-docked");
+  }, [docked]);
 
   const subtotal    = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const deliveryFee = form.governorate === "عمّان" ? 2 : form.governorate ? 3 : 0;
@@ -188,8 +205,8 @@ try {
         style={{
           background:    "rgba(0,0,0,0.38)",
           backdropFilter:"blur(5px)",
-          opacity:       isOpen ? 1 : 0,
-          pointerEvents: isOpen ? "auto" : "none",
+          opacity:       isOpen && !docked ? 1 : 0,
+          pointerEvents: isOpen && !docked ? "auto" : "none",
         }}
       />
 
@@ -202,16 +219,17 @@ try {
         dir="rtl"
         className="fixed top-0 right-0 h-full z-[60] flex flex-col"
         style={{
-          width:      "min(400px, 100vw)",
+          width:      "min(var(--cart-w), 100vw)",
           background: "var(--white)",
-          boxShadow:  "-2px 0 0 rgba(28,58,26,0.05), -20px 0 60px rgba(0,0,0,0.12)",
+          borderLeft: docked ? "1px solid var(--border-mid)" : "none",
+          boxShadow:  docked ? "none" : "-2px 0 0 rgba(28,58,26,0.05), -20px 0 60px rgba(0,0,0,0.12)",
           transition: "transform 400ms cubic-bezier(0.32,0,0.15,1)",
           transform:  isOpen ? "translateX(0)" : "translateX(100%)",
         }}
       >
         {/* ── Header (shrink-0, never scrolls) ────────────────────── */}
         <div className="shrink-0 bg-[var(--white)]" style={{ borderBottom: "1px solid var(--border)" }}>
-          <div className="flex items-center gap-3 px-5" style={{ height: 56 }}>
+          <div className="flex items-center gap-3 px-6" style={{ height: 56 }}>
 
             {/* Back button / placeholder */}
             <div style={{ width: 34 }}>
@@ -456,7 +474,7 @@ try {
 
           {/* ── STEP 1: Form ── */}
           {!done && step === 1 && (
-            <div className="px-5 pt-3 pb-4 space-y-3.5">
+            <div className="px-6 pt-3 pb-4 space-y-3.5">
 
               <SectionLabel>التواصل</SectionLabel>
 
@@ -495,7 +513,7 @@ try {
 
           {/* ── STEP 2: Review ── */}
           {!done && step === 2 && (
-            <div className="px-5 pt-3 pb-4 space-y-4">
+            <div className="px-6 pt-3 pb-4 space-y-4">
 
               <SectionLabel>المنتجات</SectionLabel>
               <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
@@ -559,7 +577,7 @@ try {
 
         {/* ── Footer — shrink-0, never scrolls ─────────────────────── */}
         {!done && items.length > 0 && (
-          <div className="shrink-0 bg-[var(--white)] px-5 pt-3 pb-5" style={{ borderTop: "1px solid var(--border)" }}>
+          <div className="shrink-0 bg-[var(--white)] px-6 pt-3 pb-5" style={{ borderTop: "1px solid var(--border)" }}>
 
             {step === 0 && (
               <div className="flex items-center justify-between mb-3">
@@ -779,7 +797,7 @@ function CartRow({ item, showDivider, onRemove, onQtyChange }: {
   onRemove: () => void; onQtyChange: (q: number) => void;
 }) {
   return (
-    <div className="flex items-center gap-3.5 px-5 py-4"
+    <div className="flex items-center gap-3.5 px-6 py-4"
       style={{ borderTop: showDivider ? "1px solid var(--surface-alt)" : "none" }}>
       <div className="relative shrink-0 rounded-xl overflow-hidden" style={{ width: 56, height: 56, background: "var(--surface-card)" }}>
         {item.image_url ? (
@@ -792,7 +810,7 @@ function CartRow({ item, showDivider, onRemove, onQtyChange }: {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold leading-snug line-clamp-2 mb-2.5" style={{ color: "var(--text-1)" }}>
+        <p className="text-[14.5px] font-semibold leading-snug line-clamp-2 mb-2.5" style={{ color: "var(--text-1)" }}>
           {item.name_ar}
         </p>
         <div className="flex items-center gap-2">

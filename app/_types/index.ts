@@ -25,6 +25,26 @@ export interface Product {
   storage_ar?: string | null;
   expiry_ar?: string | null;
   warnings_ar?: string[] | null;
+  /** Price before discount; `price` holds the discounted (selling) price */
+  original_price?: number | null;
+  discount_percent?: number | null;
+}
+
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface FeedbackImage {
+  id: string;
+  product_id: string | null;
+  image_url: string;
+  customer_name?: string | null;
+  sort_order: number;
+  created_at: string;
 }
 
 export interface CartItem {
@@ -57,7 +77,7 @@ export interface Order {
   delivery_fee?: number;
   total: number;
   notes?: string;
-  status: "pending" | "ready" | "postponed" | "done";
+  status: "pending" | "postponed" | "done";
   created_at: string;
   completed_at?: string | null;
 }

@@ -4,6 +4,7 @@ import { ThemeProvider } from "./ThemeProvider";
 import { LanguageProvider } from "./LanguageProvider";
 import { CartProvider } from "./CartProvider";
 import CartDrawer from "./CartDrawer";
+import CartToast from "./CartToast";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <CartProvider>
           {children}
           <CartDrawer />
+          <CartToast />
         </CartProvider>
       </LanguageProvider>
     </ThemeProvider>

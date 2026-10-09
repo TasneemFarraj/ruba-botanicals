@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Product } from "../_types";
 import { useCart } from "./CartProvider";
-import { fmtPrice } from "../_lib/utils";
+import { PriceTag, DiscountBadge } from "./shared/PriceTag";
+import AddToCartButton from "./shared/AddToCartButton";
 
 interface Props {
   product: Product;
@@ -56,6 +57,7 @@ export default function ProductCard({ product, bgColor }: Props) {
             الأكثر مبيعاً
           </span>
         )}
+        <DiscountBadge product={product} className="absolute top-2.5 end-2.5 z-10" />
 
         {imgSrc ? (
           <Image
@@ -121,11 +123,11 @@ export default function ProductCard({ product, bgColor }: Props) {
 
       {/* ── Info ── */}
       <div className="px-0.5 flex-1 flex flex-col gap-0.5">
-        <h3 className="font-display text-[15px] leading-snug line-clamp-2" style={{ color: "var(--text-dark)" }}>
+        <h3 className="font-display text-[16px] leading-snug line-clamp-2" style={{ color: "var(--text-dark)" }}>
           {product.name_ar}
         </h3>
         {product.unit && (
-          <p className="text-[12px]" style={{ color: "var(--text-light)" }}>
+          <p className="text-[13px]" style={{ color: "var(--text-2)" }}>
             {product.unit}
           </p>
         )}
@@ -133,42 +135,9 @@ export default function ProductCard({ product, bgColor }: Props) {
 
       {/* ── Price + add — only when price is set ── */}
       {(product.price ?? 0) > 0 && (
-      <div className="px-0.5 mt-2.5 flex items-center justify-between">
-        <span className="font-display text-[15px] font-semibold" style={{ color: "var(--gold)" }}>
-          {fmtPrice(product.price!)}
-          <span className="text-[11px] font-normal ms-0.5" style={{ color: "var(--text-light)" }}>د.أ</span>
-        </span>
-
-        <button
-          onClick={handleAdd}
-          disabled={!product.in_stock}
-          aria-label="أضيفي للسلة"
-          className="rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-40 disabled:cursor-default"
-          style={{
-            width: 36,
-            height: 36,
-            border: "1.5px solid var(--border-mid)",
-            color: "var(--text-muted)",
-            background: "transparent",
-          }}
-          onMouseEnter={(e) => {
-            if (!product.in_stock) return;
-            const el = e.currentTarget as HTMLElement;
-            el.style.background = "var(--forest-bg)";
-            el.style.color = "#fff";
-            el.style.borderColor = "var(--forest)";
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.background = "transparent";
-            el.style.color = "var(--text-muted)";
-            el.style.borderColor = "var(--border-mid)";
-          }}
-        >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <path d="M5 1v8M1 5h8"/>
-          </svg>
-        </button>
+      <div className="px-0.5 mt-3 flex items-center justify-between gap-2 flex-wrap">
+        <PriceTag product={product} size={17} />
+        <AddToCartButton disabled={!product.in_stock} onClick={handleAdd} />
       </div>
       )}
     </div>

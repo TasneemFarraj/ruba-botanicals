@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Category, Product, ProductWithCategory, Order, CartItem } from '../_types'
+import type { Category, Product, ProductWithCategory, Order, CartItem, ProductImage, FeedbackImage } from '../_types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -165,4 +165,51 @@ export async function uploadProductImage(
     .getPublicUrl(fullPath)
 
   return publicUrl
+}
+
+/* ── Product gallery & customer feedback ── */
+
+export async function getProductImages(productId: string): Promise<ProductImage[]> {
+  const { data, error } = await supabase
+    .from('product_images')
+    .select('*')
+    .eq('product_id', productId)
+    .order('sort_order')
+  if (error) { console.error(error); return [] }
+  return data ?? []
+}
+
+export async function getFeedbackImages(productId?: string): Promise<FeedbackImage[]> {
+  let query = supabase
+    .from('feedback_images')
+    .select('*')
+    .order('sort_order')
+    .order('created_at', { ascending: false })
+  if (productId) query = query.eq('product_id', productId)
+  const { data, error } = await query
+  if (error) { console.error(error); return [] }
+  return data ?? []
+}
+
+/** Uploads under a unique name and returns the public URL */
+export async function uploadToBucket(
+  bucket: 'product-images' | 'feedback-images',
+  file: File,
+  folder: string
+): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${folder}/${crypto.randomUUID()}.${ext}`
+  const { error } = await supabase.storage.from(bucket).upload(path, file)
+  if (error) throw new Error(`Storage upload failed: ${error.message}`)
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+}
+
+/** Best-effort removal of a file previously returned by uploadToBucket */
+export async function removeFromBucket(bucket: 'product-images' | 'feedback-images', publicUrl: string) {
+  const marker = `/object/public/${bucket}/`
+  const i = publicUrl.indexOf(marker)
+  if (i === -1) return
+  const path = decodeURIComponent(publicUrl.slice(i + marker.length))
+  const { error } = await supabase.storage.from(bucket).remove([path])
+  if (error) console.warn('[removeFromBucket]', error)
 }

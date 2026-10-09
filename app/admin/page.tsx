@@ -1,23 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { supabase, deleteProduct } from "../_lib/supabase";
-import type { Product, Category, Order } from "../_types";
-import AdminProductForm from "./AdminProductForm";
-import { fmtPrice } from "../_lib/utils";
-import type { User } from "@supabase/supabase-js";
+import { useState } from "react";
+import type { Order } from "../_types";
+import { waLink } from "../_lib/utils";
+import { supabase } from "../_lib/supabase";
 import EmptyState from "../_components/shared/EmptyState";
+import { useAdmin } from "./_components/AdminApp";
+import { Spinner, PageHeader } from "./_components/ui";
 
-type Tab = "orders" | "products" | "categories";
 type OrdersView = "active" | "postponed" | "archive";
 
 /* ─── Status config ─── */
 const STATUS_CONFIG: Record<Order["status"], { label: string; bg: string; color: string }> = {
   pending:   { label: "جديد",  bg: "#fef3c7", color: "#92400e" },
-  ready:     { label: "جاهز",  bg: "#dbeafe", color: "#1e40af" },
-  postponed: { label: "مؤجلة", bg: "#ffedd5", color: "#9a3412" },
+  postponed: { label: "مؤجلة", bg: "#ede9fe", color: "#5b21b6" },
   done:      { label: "تم",    bg: "#d1fae5", color: "#065f46" },
 };
 
@@ -27,11 +23,7 @@ const STATUS_OPTIONS: { value: Order["status"]; label: string; icon: React.React
     icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l3.5 2" /></svg>),
   },
   {
-    value: "ready", label: "جاهز",
-    icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" /></svg>),
-  },
-  {
-    value: "postponed", label: "مؤجل",
+    value: "postponed", label: "مؤجلة",
     icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>),
   },
   {
@@ -40,18 +32,40 @@ const STATUS_OPTIONS: { value: Order["status"]; label: string; icon: React.React
   },
 ];
 
-/* Postponed orders can only go back to "جديد" or forward to "تم" */
-const POSTPONED_OPTIONS = STATUS_OPTIONS.filter(o => o.value !== "ready");
-
 /* ─── Status badge ─── */
 function StatusBadge({ status }: { status: Order["status"] }) {
-  // Fallback covers legacy values (e.g. "confirmed") until the DB migration runs
-  const c = STATUS_CONFIG[status] ?? STATUS_CONFIG.ready;
+  // Fallback covers legacy values (e.g. "ready") until the DB migration runs
+  const c = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
   return (
     <span className="text-[11px] font-semibold px-2.5 py-1 rounded-xl whitespace-nowrap"
       style={{ background: c.bg, color: c.color }}>
       {c.label}
     </span>
+  );
+}
+
+/* ─── Order totals: products (without delivery) / delivery / total ─── */
+const orderSubtotal = (o: Order) => Number(o.subtotal ?? (o.total - (o.delivery_fee ?? 0)));
+
+function OrderTotals({ order }: { order: Order }) {
+  const cells = [
+    { label: "المنتجات", value: orderSubtotal(order) },
+    { label: "التوصيل",  value: Number(order.delivery_fee ?? 0) },
+    { label: "الإجمالي", value: Number(order.total), strong: true },
+  ];
+  return (
+    <div className="grid grid-cols-3 rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+      {cells.map((c, i) => (
+        <div key={c.label} className="px-2.5 py-1.5 text-center"
+          style={{ background: c.strong ? "var(--forest-pale)" : "#fff", borderRight: i > 0 ? "1px solid var(--border)" : "none" }}>
+          <p className="text-[10.5px]" style={{ color: "var(--text-muted)" }}>{c.label}</p>
+          <p className="text-[12.5px] tabular-nums whitespace-nowrap" dir="ltr"
+            style={{ color: c.strong ? "var(--forest)" : "var(--text-dark)", fontWeight: c.strong ? 700 : 500 }}>
+            {c.value.toFixed(2)} <span className="text-[10px] font-normal">د.أ</span>
+          </p>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -140,120 +154,6 @@ function CopyOrderButton({ order, withLabel }: { order: Order; withLabel?: boole
   );
 }
 
-/* ─── Spinner ─── */
-function Spinner() {
-  return (
-    <div className="flex justify-center py-20">
-      <div className="w-6 h-6 border-2 rounded-full animate-spin"
-        style={{ borderColor: "var(--forest)", borderTopColor: "transparent" }} />
-    </div>
-  );
-}
-
-/* ─── Toggle switch ─── */
-function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={value}
-      onClick={onChange}
-      className="relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none shrink-0"
-      style={{ background: value ? "var(--forest-bg)" : "#e2e8f0" }}
-    >
-      <span
-        className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200"
-        style={{ right: value ? "2px" : "auto", left: value ? "auto" : "2px" }}
-      />
-    </button>
-  );
-}
-
-/* ─── Toast ─── */
-type ToastState = { message: string; type: "success" | "error" };
-
-function Toast({ message, type, onDone }: ToastState & { onDone: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 3500);
-    return () => clearTimeout(t);
-  }, [onDone]);
-  return (
-    <div
-      className="fixed bottom-6 left-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-[13px] font-medium"
-      style={{ background: type === "success" ? "var(--forest-bg)" : "#dc2626", color: "#fff", minWidth: 200, maxWidth: "calc(100vw - 48px)" }}
-    >
-      {type === "success" ? (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 shrink-0">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 shrink-0">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      )}
-      {message}
-    </div>
-  );
-}
-
-/* ─── Icon button ─── */
-function IconBtn({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title?: string; danger?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors"
-      style={{ color: danger ? "#ef4444" : "var(--text-light)", background: "transparent" }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = danger ? "#fef2f2" : "var(--forest-pale)"; (e.currentTarget as HTMLElement).style.color = danger ? "#dc2626" : "var(--forest-mid)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = danger ? "#ef4444" : "var(--text-light)"; }}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ─── Confirm delete dialog ─── */
-function ConfirmDialog({
-  name, onConfirm, onCancel, loading,
-}: { name: string; onConfirm: () => void; onCancel: () => void; loading: boolean }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
-      <div onClick={onCancel} className="absolute inset-0" style={{ background: "rgba(28,58,26,0.45)", backdropFilter: "blur(4px)" }} />
-      <div className="relative w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden" style={{ background: "#fff" }}>
-        <div className="p-6">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: "#fef2f2" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.8" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v6M14 11v6" />
-            </svg>
-          </div>
-          <h3 className="font-display text-[18px] mb-1" style={{ color: "#1a2810" }}>تأكيد الحذف</h3>
-          <p className="text-[13px] mb-5" style={{ color: "var(--text-muted)" }}>
-            سيتم حذف <span className="font-semibold" style={{ color: "#1a2810" }}>{name}</span> نهائياً ولا يمكن التراجع.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={onCancel}
-              className="flex-1 py-2.5 rounded-xl text-[13px] font-medium border transition-opacity hover:opacity-70"
-              style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
-            >
-              إلغاء
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={loading}
-              className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-opacity disabled:opacity-50"
-              style={{ background: "#dc2626", color: "#fff" }}
-            >
-              {loading ? "جاري الحذف..." : "حذف"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Confirm status move (archive / restore) ─── */
 type StatusMove = { order: Order; to: "done" | "pending" };
 
@@ -274,7 +174,7 @@ function ConfirmMoveDialog({
                 : <path strokeLinecap="round" strokeLinejoin="round" d="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />}
             </svg>
           </div>
-          <h3 className="font-display text-[18px] mb-1" style={{ color: "#1a2810" }}>
+          <h3 className="text-[18px] mb-1" style={{ color: "#1a2810" }}>
             {toArchive ? "هل تريدين نقل هذا الطلب للأرشيف؟" : "إرجاع هذا الطلب للطلبات النشطة؟"}
           </h3>
           <p className="text-[13px] mb-5" style={{ color: "var(--text-muted)" }}>
@@ -304,290 +204,20 @@ function ConfirmMoveDialog({
   );
 }
 
-/* ─── Category form modal ─── */
-function CategoryForm({
-  category,
-  onClose,
-  onSuccess,
-}: {
-  category: Category | null;
-  onClose: () => void;
-  onSuccess: (msg: string, updated: Category) => void;
-}) {
-  const [form, setForm] = useState({
-    name_ar:    category?.name_ar   ?? "",
-    slug:       category?.slug      ?? "",
-    sort_order: String(category?.sort_order ?? 0),
-    image_url:  category?.image_url ?? "",
-  });
-  const [imageFile,    setImageFile]    = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState(category?.image_url ?? "");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
-  const imgRef = useRef<HTMLInputElement>(null);
-
-  const inputSt = { background: "#f7f8f7", border: "1px solid #e5e9e4", color: "var(--text-dark)" };
-  const inputCl = "w-full px-3 py-2 rounded-lg text-[13px] outline-none transition-colors";
-  const labelCl = "block text-[11px] font-medium mb-1";
-  const labelSt = { color: "var(--text-muted)" };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { setImageFile(file); setImagePreview(reader.result as string); };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name_ar.trim() || !form.slug.trim()) {
-      setError("الاسم والـ slug مطلوبان");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      /* ── Step 1: upload image directly to Storage ── */
-      let imageUrl: string | null = form.image_url || null;
-      if (imageFile) {
-        const catId  = category?.id ?? crypto.randomUUID();
-        const ext    = imageFile.name.split(".").pop() ?? "jpg";
-        const filePath = `categories/${catId}/image.${ext}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("product-images")
-          .upload(filePath, imageFile, { upsert: true });
-
-        if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
-
-        imageUrl = supabase.storage
-          .from("product-images")
-          .getPublicUrl(filePath).data.publicUrl;
-      }
-
-      /* ── Step 2: save to categories table ── */
-      const payload = {
-        name_ar:    form.name_ar.trim(),
-        slug:       form.slug.trim(),
-        sort_order: parseInt(form.sort_order) || 0,
-        image_url:  imageUrl,
-      };
-
-      let saved: Category;
-      if (category) {
-        const { data: rows, error } = await supabase
-          .from("categories").update(payload).eq("id", category.id).select();
-        if (error) throw new Error(`DB update failed: ${error.message}`);
-        if (!rows?.length) throw new Error(`فشل التحديث — تحقق من سياسات RLS في Supabase (id: ${category.id})`);
-        saved = rows[0] as Category;
-      } else {
-        const { data: rows, error } = await supabase
-          .from("categories").insert([payload]).select();
-        if (error) throw new Error(`DB insert failed: ${error.message}`);
-        if (!rows?.length) throw new Error("فشل الإدراج — تحقق من سياسات RLS في Supabase");
-        saved = rows[0] as Category;
-      }
-
-      onSuccess(category ? "تم تعديل القسم بنجاح" : "تمت إضافة القسم بنجاح", saved);
-    } catch (err) {
-      console.error("[CategoryForm]", err);
-      setError(err instanceof Error ? err.message : "حدث خطأ، يرجى المحاولة مجدداً");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
-      <div onClick={onClose} className="absolute inset-0"
-        style={{ background: "rgba(28,58,26,0.45)", backdropFilter: "blur(4px)" }} />
-      <div className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
-        style={{ background: "#fff" }}>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b shrink-0"
-          style={{ borderColor: "var(--border)" }}>
-          <h2 className="font-display text-[15px]" style={{ color: "var(--forest)" }}>
-            {category ? "تعديل القسم" : "إضافة قسم جديد"}
-          </h2>
-          <button onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-lg transition-opacity hover:opacity-50"
-            style={{ color: "var(--text-light)" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-[11px] px-3 py-2 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            {/* Image upload */}
-            <div>
-              <p className={labelCl} style={labelSt}>صورة القسم</p>
-              <div
-                onClick={() => imgRef.current?.click()}
-                className="relative rounded-lg border-2 border-dashed cursor-pointer overflow-hidden flex items-center justify-center transition-colors hover:border-[var(--forest-mid)]"
-                style={{ height: 110, borderColor: "#e5e9e4", background: "#f7f8f7" }}
-              >
-                {imagePreview ? (
-                  <Image src={imagePreview} alt="preview" fill className="object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center gap-1" style={{ color: "var(--text-light)" }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                    <span className="text-[10px]">رفع صورة</span>
-                  </div>
-                )}
-              </div>
-              <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-            </div>
-
-            <div>
-              <label className={labelCl} style={labelSt}>
-                الاسم <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <input type="text" required value={form.name_ar} placeholder="مثال: حناء شعر"
-                onChange={e => setForm({ ...form, name_ar: e.target.value })}
-                className={inputCl} style={inputSt} />
-            </div>
-            <div>
-              <label className={labelCl} style={labelSt}>
-                <span className="font-mono">slug</span>
-                <span className="text-[10px] font-normal mr-1.5" style={{ color: "var(--text-light)" }}>— معرّف الرابط مثل henna-hair</span>
-                <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <input type="text" required value={form.slug} dir="ltr" placeholder="henna-hair"
-                onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") })}
-                className={`${inputCl} font-mono`} style={inputSt} />
-            </div>
-            <div>
-              <label className={labelCl} style={labelSt}>الترتيب</label>
-              <input type="number" inputMode="numeric" pattern="[0-9]*" value={form.sort_order} placeholder="0" dir="ltr"
-                onChange={e => setForm({ ...form, sort_order: e.target.value.replace(/\D/g, "") })}
-                className={`${inputCl} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                style={inputSt} />
-            </div>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <div className="px-5 py-2.5 border-t shrink-0" style={{ borderColor: "var(--border)" }}>
-          <button onClick={handleSubmit as unknown as React.MouseEventHandler} disabled={loading}
-            className="w-full py-2 rounded-xl text-[13px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: "var(--forest-bg)", color: "#fff" }}>
-            {loading ? "جاري الحفظ..." : category ? "حفظ التعديلات" : "إضافة القسم"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Main admin page ─── */
-export default function AdminPage() {
-  const router      = useRouter();
-  const initialized = useRef(false); // ensures data is fetched only once, even if auth fires multiple times
-  const [user,    setUser]    = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("orders");
-  const [toast, setToast] = useState<ToastState | null>(null);
-
-  /* Orders */
-  const [orders,          setOrders]          = useState<Order[]>([]);
-  const [ordersLoading,   setOrdersLoading]   = useState(false);
+/* ─── Orders page ─── */
+export default function OrdersPage() {
+  const { orders, setOrders, ordersLoading, toast } = useAdmin();
   const [expandedOrder,   setExpandedOrder]   = useState<string | null>(null);
   const [copiedAddressId, setCopiedAddressId] = useState<string | null>(null);
   const [ordersView,      setOrdersView]      = useState<OrdersView>("active");
   const [confirmMove,     setConfirmMove]     = useState<StatusMove | null>(null);
   const [moveLoading,     setMoveLoading]     = useState(false);
 
-  /* Products */
-  const [products,        setProducts]        = useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] = useState(false);
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [editProduct,     setEditProduct]     = useState<Product | null>(null);
-
-  /* Categories */
-  const [categories,       setCategories]       = useState<Category[]>([]);
-  const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [editCategory,     setEditCategory]     = useState<Category | null>(null);
-  const catFetchVer = useRef(0); // prevents stale fetchCategories responses from overwriting optimistic updates
-
-  /* Confirm delete */
-  const [confirmDelete, setConfirmDelete] = useState<{ type: "product" | "category"; id: string; name: string } | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-
-  /* ─ Auth — onAuthStateChange fires immediately with INITIAL_SESSION, no need for getSession() ─ */
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (!session?.user) router.replace("/admin/login");
-    });
-    return () => subscription.unsubscribe();
-  }, [router]);
-
-  /* ─ Data fetchers ─ */
-  const fetchOrders = useCallback(async () => {
-    setOrdersLoading(true);
-    const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setOrders(data ?? []);
-    setOrdersLoading(false);
-  }, []);
-
-  const fetchProducts = useCallback(async () => {
-    setProductsLoading(true);
-    const { data } = await supabase.from("products").select("*").order("sort_order");
-    setProducts(data ?? []);
-    setProductsLoading(false);
-  }, []);
-
-  const fetchCategories = useCallback(async () => {
-    const { data, error } = await supabase.from("categories").select("*").order("sort_order");
-    if (error) { console.error("[fetchCategories]", error); return; }
-    setCategories(data ?? []);
-  }, []);
-
-  /* ─ Fetch data ONCE when user is first identified ─ */
-  useEffect(() => {
-    if (!user || initialized.current) return;
-    initialized.current = true;
-    fetchOrders();
-    fetchProducts();
-    fetchCategories();
-  }, [user, fetchOrders, fetchProducts, fetchCategories]);
-
-  /* ─ Realtime orders ─ */
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("admin-orders-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => {
-        setToast({ message: "طلب جديد! 🌿", type: "success" });
-        fetchOrders();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, fetchOrders]);
-
-  /* ─ Helpers ─ */
   const updateOrderStatus = async (id: string, status: Order["status"]) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (error) {
       console.error("[updateOrderStatus]", error);
-      setToast({ message: "تعذّر تحديث حالة الطلب", type: "error" });
+      toast("تعذّر تحديث حالة الطلب", "error");
       return false;
     }
     let completed_at: string | null = null;
@@ -606,8 +236,8 @@ export default function AdminPage() {
     if (status === order.status) return;
     if (status === "done") { setConfirmMove({ order, to: "done" }); return; }
     const ok = await updateOrderStatus(order.id, status);
-    if (ok && status === "postponed") setToast({ message: "تم نقل الطلب للمؤجلة", type: "success" });
-    if (ok && order.status === "postponed") setToast({ message: "تم إرجاع الطلب للطلبات", type: "success" });
+    if (ok && status === "postponed") toast("تم نقل الطلب للمؤجلة");
+    if (ok && order.status === "postponed") toast("تم إرجاع الطلب للطلبات");
   };
 
   const handleConfirmMove = async () => {
@@ -619,7 +249,7 @@ export default function AdminPage() {
     setConfirmMove(null);
     if (ok) {
       if (expandedOrder === order.id) setExpandedOrder(null);
-      setToast({ message: to === "done" ? "تم نقل الطلب للأرشيف" : "تم إرجاع الطلب للطلبات", type: "success" });
+      toast(to === "done" ? "تم نقل الطلب للأرشيف" : "تم إرجاع الطلب للطلبات");
     }
   };
 
@@ -630,224 +260,42 @@ export default function AdminPage() {
     setTimeout(() => setCopiedAddressId(null), 2000);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!confirmDelete) return;
-    setDeleteLoading(true);
-    try {
-      if (confirmDelete.type === "product") {
-        await deleteProduct(confirmDelete.id);
-        setProducts(prev => prev.filter(p => p.id !== confirmDelete.id));
-      } else {
-        await supabase.from("categories").delete().eq("id", confirmDelete.id);
-        setCategories(prev => prev.filter(c => c.id !== confirmDelete.id));
-      }
-      setToast({ message: "تم الحذف بنجاح", type: "success" });
-    } catch {
-      setToast({ message: "حدث خطأ أثناء الحذف", type: "error" });
-    } finally {
-      setConfirmDelete(null);
-      setDeleteLoading(false);
-    }
-  };
-
-  const getCategoryName = (id: string) =>
-    categories.find(c => c.id === id)?.name_ar ?? "—";
-
   const todayCount = orders.filter(o => {
     const d = new Date(o.created_at);
     const n = new Date();
     return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
   }).length;
 
-  const totalSales = orders
-    .filter(o => o.status === "done")
-    .reduce((sum, o) => sum + o.total, 0);
+  const doneOrders     = orders.filter(o => o.status === "done");
+  const totalSales     = doneOrders.reduce((sum, o) => sum + Number(o.total), 0);
+  const totalSalesNet  = doneOrders.reduce((sum, o) => sum + orderSubtotal(o), 0); // without delivery
 
   const formatDate = (s: string) => {
     const d = new Date(s);
     const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const day   = d.getDate();
-    const month = months[d.getMonth()];
-    const year  = d.getFullYear();
-    const h     = d.getHours();
-    const min   = d.getMinutes().toString().padStart(2, "0");
-    const ampm  = h >= 12 ? "PM" : "AM";
-    const hour  = h % 12 || 12;
-    return `${day} ${month} ${year}, ${hour}:${min} ${ampm}`;
+    const h   = d.getHours();
+    const min = d.getMinutes().toString().padStart(2, "0");
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${h % 12 || 12}:${min} ${h >= 12 ? "PM" : "AM"}`;
   };
-
-  const pendingCount = orders.filter(o => o.status === "pending").length;
 
   // Anything not postponed/done counts as active, so legacy statuses never disappear from view
   const activeOrders    = orders.filter(o => o.status !== "done" && o.status !== "postponed");
   const postponedOrders = orders.filter(o => o.status === "postponed");
   const listOrders      = ordersView === "postponed" ? postponedOrders : activeOrders;
-  const listOptions     = ordersView === "postponed" ? POSTPONED_OPTIONS : STATUS_OPTIONS;
-  const archivedOrders = orders
-    .filter(o => o.status === "done")
+  const archivedOrders  = doneOrders
+    .slice()
     .sort((a, b) => (b.completed_at ?? b.created_at).localeCompare(a.completed_at ?? a.created_at));
 
-  /* ─ Loading / auth ─ */
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#fff" }}>
-        <div className="w-6 h-6 border-2 rounded-xl animate-spin"
-          style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }} />
-      </div>
-    );
-  }
-  if (!user) return null;
-
-  const tabs: { id: Tab; label: string; badge?: number }[] = [
-    { id: "orders",     label: "الطلبات",  badge: pendingCount },
-    { id: "products",   label: "المنتجات" },
-    { id: "categories", label: "الأقسام" },
-  ];
-
-  const thStyle: React.CSSProperties = {
-    color: "var(--text-light)",
-    fontWeight: 600,
-    whiteSpace: "nowrap",
-    fontSize: 12,
-  };
-  const tdStyle: React.CSSProperties = { fontSize: 13 };
-
   return (
-    <div className="min-h-screen flex flex-col" dir="rtl"
-      style={{ background: "#ffffff", fontFamily: "var(--font-display), Georgia, serif" }}>
+    <div>
+      <PageHeader
+        title="الطلبات"
+        subtitle={new Date().toLocaleDateString("ar-JO-u-nu-latn", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+      />
 
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-6 py-4 border-b"
-        style={{ background: "#fff", borderColor: "var(--border)" }}>
-        <div>
-          <h1 className="font-display text-lg font-semibold" style={{ color: "var(--forest)" }}>
-            لوحة التحكم — ربى فرّاج
-          </h1>
-          <p className="text-[11px] mt-0.5" style={{ color: "var(--text-light)" }}>{user.email}</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="/" className="text-xs transition-opacity hover:opacity-70"
-            style={{ color: "var(--text-muted)" }}>
-            عرض الموقع
-          </a>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="text-xs px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
-            style={{ background: "var(--forest-bg)", color: "#fff" }}>
-            تسجيل خروج
-          </button>
-        </div>
-      </header>
-
-      <div className="flex flex-1">
-
-        {/* ── Sidebar (desktop) ── */}
-        <aside className="w-52 shrink-0 border-l min-h-full hidden sm:flex flex-col"
-          style={{ background: "#f7f8f5", borderColor: "var(--border)" }}>
-
-          {/* Section label */}
-          <p className="px-4 pt-5 pb-2 text-[10px] font-semibold tracking-widest uppercase"
-            style={{ color: "var(--text-light)", letterSpacing: "0.1em" }}>
-            القائمة
-          </p>
-
-          <nav className="px-3 space-y-0.5 flex-1">
-            {[
-              {
-                ...tabs[0],
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4 shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                ),
-              },
-              {
-                ...tabs[1],
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4 shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
-                  </svg>
-                ),
-              },
-              {
-                ...tabs[2],
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4 shrink-0">
-                    <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-                    <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-                  </svg>
-                ),
-              },
-            ].map(tab => {
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all text-right"
-                  style={{
-                    background: active ? "var(--forest-pale)" : "transparent",
-                    color: active ? "var(--forest-bg)" : "var(--text-muted)",
-                    fontWeight: active ? 600 : 400,
-                    boxShadow: active ? "inset 0 0 0 1px rgba(28,58,26,0.12)" : "none",
-                  }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f0f2ee"; }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                >
-                  <span style={{ color: active ? "var(--forest-mid)" : "var(--text-light)" }}>{tab.icon}</span>
-                  <span className="flex-1">{tab.label}</span>
-                  {tab.badge !== undefined && tab.badge > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-                      style={{ background: "var(--forest-bg)", color: "#fff" }}>
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Bottom divider + version */}
-          <div className="px-4 py-4 border-t" style={{ borderColor: "var(--border)" }}>
-            <p className="text-[10px]" style={{ color: "var(--text-light)" }}>ربى فرّاج · لوحة التحكم</p>
-          </div>
-        </aside>
-
-        {/* ── Mobile tab bar ── */}
-        <div className="sm:hidden fixed bottom-0 inset-x-0 z-20 flex border-t"
-          style={{ background: "#f7f3ee", borderColor: "var(--border)" }}>
-          {([
-            { id: "orders"     as Tab, label: "الطلبات",  badge: pendingCount, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
-            { id: "products"   as Tab, label: "المنتجات", badge: undefined,     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" /></svg> },
-            { id: "categories" as Tab, label: "الأقسام",  badge: undefined,     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
-          ] as { id: Tab; label: string; badge: number | undefined; icon: React.ReactNode }[]).map(tab => {
-            const active = activeTab === tab.id;
-            return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 relative transition-colors"
-                style={{ color: active ? "var(--forest-bg)" : "var(--text-light)" }}>
-                {tab.icon}
-                <span className="text-[10px] font-medium">{tab.label}</span>
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="absolute top-1.5 right-[calc(50%-18px)] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ background: "var(--forest-bg)", color: "#fff" }}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Main content ── */}
-        <main className="flex-1 p-6 min-w-0 pb-20 sm:pb-6">
-
-          {/* ════ Orders Tab ════ */}
-          {activeTab === "orders" && (
-            <div>
               {/* Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                {[
+                {([
                   {
                     label: "إجمالي الطلبات",
                     value: orders.length,
@@ -874,7 +322,8 @@ export default function AdminPage() {
                   },
                   {
                     label: "إجمالي المبيعات",
-                    value: `${totalSales.toFixed(2)} د.أ`,
+                    value: `${totalSalesNet.toFixed(2)} د.أ`,
+                    sub: `بدون التوصيل · شامل التوصيل: ${totalSales.toFixed(2)} د.أ`,
                     icon: (
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-5 h-5">
                         <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" strokeLinecap="round" strokeLinejoin="round"/>
@@ -884,7 +333,7 @@ export default function AdminPage() {
                     accent: "var(--gold)",
                     pale: "var(--gold-light)",
                   },
-                ].map(stat => (
+                ] as { label: string; value: string | number; sub?: string; icon: React.ReactNode; accent: string; pale: string }[]).map(stat => (
                   <div key={stat.label} className="rounded-2xl p-5 border flex items-center gap-4"
                     style={{ background: "#fff", borderColor: "var(--border)" }}>
                     <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
@@ -893,9 +342,12 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="text-xs mb-0.5" style={{ color: "var(--text-light)" }}>{stat.label}</p>
-                      <p className="font-display text-xl font-semibold" style={{ color: stat.accent }}>
+                      <p className="text-xl font-semibold" style={{ color: stat.accent }}>
                         {stat.value}
                       </p>
+                      {stat.sub && (
+                        <p className="text-[12px] mt-0.5 tabular-nums" style={{ color: "var(--text-muted)" }}>{stat.sub}</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -942,7 +394,7 @@ export default function AdminPage() {
                             <span className="font-semibold text-[14px]" style={{ color: "#1a2810" }}>{order.customer_name}</span>
                             <div className="flex items-center gap-2 shrink-0">
                               <div className="flex items-baseline gap-1">
-                                <span className="font-display text-[16px]" style={{ color: "var(--text-dark)" }}>{order.total}</span>
+                                <span className="text-[16px]" style={{ color: "var(--text-dark)" }}>{order.total}</span>
                                 <span className="text-[11px]" style={{ color: "var(--text-light)" }}>د.أ</span>
                               </div>
                               <CopyOrderButton order={order} />
@@ -961,6 +413,7 @@ export default function AdminPage() {
                               {formatDate(order.completed_at ?? order.created_at)}
                             </span>
                           </div>
+                          <div className="mt-2.5"><OrderTotals order={order} /></div>
                         </div>
                         {isExpanded && (
                           <div className="px-4 py-3 space-y-1" style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
@@ -970,22 +423,6 @@ export default function AdminPage() {
                                 <span dir="ltr" style={{ color: "var(--text-muted)" }}>{item.price.toFixed(2)} × {item.quantity}</span>
                               </div>
                             ))}
-                            <div className="space-y-0.5 pt-1.5 mt-1 text-[11.5px]" style={{ borderTop: "1px solid var(--border)" }}>
-                              <div className="flex justify-between">
-                                <span style={{ color: "var(--text-light)" }}>المنتجات</span>
-                                <span dir="ltr" style={{ color: "var(--text-dark)" }}>{(order.subtotal ?? (order.total - (order.delivery_fee ?? 0))).toFixed(2)} د.أ</span>
-                              </div>
-                              {(order.delivery_fee ?? 0) > 0 && (
-                                <div className="flex justify-between">
-                                  <span style={{ color: "var(--text-light)" }}>التوصيل</span>
-                                  <span dir="ltr" style={{ color: "var(--text-dark)" }}>{(order.delivery_fee ?? 0).toFixed(2)} د.أ</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between font-semibold">
-                                <span style={{ color: "var(--text-muted)" }}>الإجمالي</span>
-                                <span dir="ltr" style={{ color: "var(--forest)" }}>{order.total} د.أ</span>
-                              </div>
-                            </div>
                             {(order.governorate || order.area || order.street_address) && (
                               <p className="text-[11px] pt-1.5" style={{ color: "var(--text-muted)" }}>
                                 {[order.governorate, order.area, order.street_address].filter(Boolean).join("، ")}
@@ -1097,7 +534,7 @@ export default function AdminPage() {
                             {/* Total */}
                             <td className="px-4 py-3.5 align-middle whitespace-nowrap">
                               <div className="flex items-baseline gap-1.5">
-                                <span className="font-display" style={{ fontSize: 17, fontWeight: 400, color: "var(--text-dark)", letterSpacing: "-0.01em" }}>
+                                <span style={{ fontSize: 17, fontWeight: 600, color: "var(--text-dark)", letterSpacing: "-0.01em" }}>
                                   {order.total}
                                 </span>
                                 <span className="text-[11px]" style={{ color: "var(--text-light)" }}>د.أ</span>
@@ -1105,12 +542,15 @@ export default function AdminPage() {
                                   · {order.items.length} {order.items.length === 1 ? "منتج" : "منتجات"}
                                 </span>
                               </div>
+                              <div className="text-[11px] mt-0.5 tabular-nums" style={{ color: "var(--text-muted)" }}>
+                                المنتجات: {orderSubtotal(order).toFixed(2)} · التوصيل: {Number(order.delivery_fee ?? 0).toFixed(2)}
+                              </div>
                             </td>
 
                             {/* Status — segmented buttons with icons */}
                             <td className="px-4 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                               <div className="inline-flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)", fontSize: 11 }}>
-                                {listOptions.map((opt, idx) => {
+                                {STATUS_OPTIONS.map((opt, idx) => {
                                   const isActive = order.status === opt.value;
                                   return (
                                     <button
@@ -1140,7 +580,7 @@ export default function AdminPage() {
                               <div className="inline-flex items-center gap-1.5">
                               <CopyOrderButton order={order} />
                               <a
-                                href={`https://wa.me/${order.customer_phone.replace(/\D/g, "")}`}
+                                href={waLink(order.customer_phone)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title={`واتساب — ${order.customer_phone}`}
@@ -1269,26 +709,24 @@ export default function AdminPage() {
                                         <div className="flex justify-between items-center">
                                           <span className="text-[11.5px]" style={{ color: "#a8a090" }}>المنتجات</span>
                                           <span className="text-[12.5px] tabular-nums" style={{ color: "#2a2218" }}>
-                                            {(order.subtotal ?? (order.total - (order.delivery_fee ?? 0))).toFixed(2)}{" "}
+                                            {orderSubtotal(order).toFixed(2)}{" "}
                                             <span className="text-[10px]" style={{ color: "#b0a898" }}>د.أ</span>
                                           </span>
                                         </div>
-                                        {(order.delivery_fee ?? 0) > 0 && (
-                                          <div className="flex justify-between items-center">
-                                            <span className="text-[11.5px]" style={{ color: "#a8a090" }}>التوصيل</span>
-                                            <span className="text-[12.5px] tabular-nums" style={{ color: "#2a2218" }}>
-                                              {(order.delivery_fee ?? 0).toFixed(2)}{" "}
-                                              <span className="text-[10px]" style={{ color: "#b0a898" }}>د.أ</span>
-                                            </span>
-                                          </div>
-                                        )}
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-[11.5px]" style={{ color: "#a8a090" }}>التوصيل</span>
+                                          <span className="text-[12.5px] tabular-nums" style={{ color: "#2a2218" }}>
+                                            {Number(order.delivery_fee ?? 0).toFixed(2)}{" "}
+                                            <span className="text-[10px]" style={{ color: "#b0a898" }}>د.أ</span>
+                                          </span>
+                                        </div>
                                         <div
                                           className="flex justify-between items-baseline pt-2 mt-0.5"
                                           style={{ borderTop: "1px solid #ede8e0" }}
                                         >
                                           <span className="text-[12px] font-semibold" style={{ color: "#4a4238" }}>الإجمالي</span>
                                           <div className="flex items-baseline gap-1" dir="ltr">
-                                            <span className="font-display text-[17px] font-semibold" style={{ color: "var(--text-dark)" }}>{order.total}</span>
+                                            <span className="text-[17px] font-semibold" style={{ color: "var(--text-dark)" }}>{order.total}</span>
                                             <span className="text-[10.5px]" style={{ color: "#b0a898" }}>د.أ</span>
                                           </div>
                                         </div>
@@ -1330,7 +768,7 @@ export default function AdminPage() {
                               {order.customer_phone}
                             </span>
                             <div className="flex items-baseline gap-1">
-                              <span className="font-display text-[16px]" style={{ color: "var(--text-dark)" }}>
+                              <span className="text-[16px]" style={{ color: "var(--text-dark)" }}>
                                 {order.total}
                               </span>
                               <span className="text-[11px]" style={{ color: "var(--text-light)" }}>د.أ</span>
@@ -1342,6 +780,7 @@ export default function AdminPage() {
                           <p className="text-[11px] mt-1" dir="ltr" style={{ color: "var(--text-light)" }}>
                             {datePart} • {timePart}
                           </p>
+                          <div className="mt-2.5"><OrderTotals order={order} /></div>
                         </div>
 
                         {/* Actions bar */}
@@ -1349,7 +788,7 @@ export default function AdminPage() {
                           style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
                           <div className="inline-flex rounded-xl overflow-hidden"
                             style={{ border: "1px solid var(--border)", fontSize: 11 }}>
-                            {listOptions.map((opt, idx) => {
+                            {STATUS_OPTIONS.map((opt, idx) => {
                               const isActive = order.status === opt.value;
                               return (
                                 <button key={opt.value}
@@ -1363,7 +802,7 @@ export default function AdminPage() {
                           </div>
                           <div className="flex items-center gap-1.5">
                             <CopyOrderButton order={order} />
-                            <a href={`https://wa.me/${order.customer_phone.replace(/\D/g, "")}`}
+                            <a href={waLink(order.customer_phone)}
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium"
                               style={{ background: "#e8faf0", color: "#15803d" }}>
@@ -1396,28 +835,6 @@ export default function AdminPage() {
                                 </div>
                               </div>
                             ))}
-
-                            {/* Financial breakdown */}
-                            <div className="space-y-1 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px]" style={{ color: "var(--text-light)" }}>المنتجات</span>
-                                <span className="text-[12px] font-medium" style={{ color: "var(--text-dark)" }} dir="ltr">
-                                  {(order.subtotal ?? (order.total - (order.delivery_fee ?? 0))).toFixed(2)} د.أ
-                                </span>
-                              </div>
-                              {(order.delivery_fee ?? 0) > 0 && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px]" style={{ color: "var(--text-light)" }}>التوصيل — {order.governorate}</span>
-                                  <span className="text-[12px] font-medium" style={{ color: "var(--text-dark)" }} dir="ltr">
-                                    {(order.delivery_fee ?? 0).toFixed(2)} د.أ
-                                  </span>
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between pt-1" style={{ borderTop: "1px dashed var(--border)" }}>
-                                <span className="text-[12px] font-semibold" style={{ color: "var(--text-muted)" }}>الإجمالي الكلي</span>
-                                <span className="text-[14px] font-bold" style={{ color: "var(--forest)" }}>{order.total} د.أ</span>
-                              </div>
-                            </div>
 
                             {/* Address + phone2 + notes */}
                             {(order.governorate || order.area || order.street_address || order.customer_phone2 || order.notes) && (
@@ -1471,402 +888,7 @@ export default function AdminPage() {
                 </div>
                 </>
               ))}
-            </div>
-          )}
 
-          {/* ════ Products Tab ════ */}
-          {activeTab === "products" && (() => {
-            // Group products by category, sorted by sort_order within each group
-            const knownCatIds = new Set(categories.map(c => c.id));
-            const catMap = new Map<string, Product[]>();
-            for (const p of products) {
-              const key = (p.category_id && knownCatIds.has(p.category_id)) ? p.category_id : "__none__";
-              if (!catMap.has(key)) catMap.set(key, []);
-              catMap.get(key)!.push(p);
-            }
-            const productGroups: { catName: string; products: Product[] }[] = [];
-            for (const cat of categories) {
-              const grp = catMap.get(cat.id);
-              if (grp && grp.length > 0) {
-                productGroups.push({ catName: cat.name_ar, products: [...grp].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) });
-              }
-            }
-            const noCat = catMap.get("__none__");
-            if (noCat && noCat.length > 0) {
-              productGroups.push({ catName: "بدون فئة", products: [...noCat].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) });
-            }
-
-            return (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display text-2xl font-semibold" style={{ color: "var(--forest)" }}>
-                  المنتجات
-                </h2>
-                <button
-                  onClick={() => { setEditProduct(null); setShowProductForm(true); }}
-                  className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-xl transition-opacity hover:opacity-80"
-                  style={{ background: "var(--forest-bg)", color: "#fff" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path strokeLinecap="round" d="M12 5v14M5 12h14"/></svg>
-                  إضافة منتج
-                </button>
-              </div>
-
-              {productsLoading ? <Spinner /> : products.length === 0 ? (
-                <EmptyState title="لا توجد منتجات" />
-              ) : (
-                <>
-                <div className="hidden md:block rounded-2xl border" style={{ borderColor: "var(--border)", overflowX: "auto" }}>
-                    <table className="w-full">
-                      <colgroup>
-                        <col style={{ width: "52px" }} />
-                        <col />
-                        <col style={{ width: "80px" }} />
-                        <col style={{ width: "90px" }} />
-                        <col style={{ width: "70px" }} />
-                        <col style={{ width: "72px" }} />
-                      </colgroup>
-                      <thead>
-                        <tr style={{ background: "#f9f8f6", borderBottom: "1px solid var(--border)" }}>
-                          {(["صورة", "الاسم", "السعر", "الأكثر مبيعًا", "متوفر", "إجراءات"] as const).map(h => {
-                            const centered = ["صورة", "الأكثر مبيعًا", "متوفر", "إجراءات"].includes(h);
-                            return (
-                              <th key={h} className={`px-4 py-3 ${centered ? "text-center" : "text-right"}`} style={thStyle}>{h}</th>
-                            );
-                          })}
-                        </tr>
-                      </thead>
-                      {productGroups.map(group => (
-                        <tbody key={group.catName}>
-                          {/* Category header row */}
-                          <tr style={{ background: "#f2f4f0" }}>
-                            <td colSpan={6} className="px-4 py-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[12px] font-semibold" style={{ color: "var(--forest)" }}>{group.catName}</span>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--forest-pale)", color: "var(--forest-mid)" }}>{group.products.length}</span>
-                              </div>
-                            </td>
-                          </tr>
-                          {group.products.map((product, i) => (
-                            <tr key={product.id}
-                              style={{
-                                background: i % 2 === 0 ? "#fff" : "#fafaf9",
-                                borderBottom: "1px solid var(--border)",
-                              }}>
-                              <td className="px-4 py-3 text-center">
-                                <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0 mx-auto"
-                                  style={{ background: "var(--cream)" }}>
-                                  {product.image_url ? (
-                                    <Image src={product.image_url} alt={product.name_ar}
-                                      width={40} height={40} className="object-contain w-full h-full p-1" />
-                                  ) : (
-                                    <span className="text-xs" style={{ color: "var(--text-light)" }}>
-                                      {product.name_ar.charAt(0)}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <p className="font-medium line-clamp-2 leading-snug"
-                                  style={{ color: "var(--text-dark)", ...tdStyle }}>
-                                  {product.name_ar}
-                                </p>
-                              </td>
-                              <td className="px-4 py-3 font-semibold whitespace-nowrap"
-                                style={{ color: "var(--gold)", ...tdStyle }}>
-                                {product.price != null ? fmtPrice(product.price) : "—"}
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <Toggle
-                                  value={product.is_best_seller}
-                                  onChange={async () => {
-                                    const next = !product.is_best_seller;
-                                    await supabase.from("products").update({ is_best_seller: next }).eq("id", product.id);
-                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_best_seller: next } : p));
-                                  }}
-                                />
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <Toggle
-                                  value={product.in_stock}
-                                  onChange={async () => {
-                                    const next = !product.in_stock;
-                                    await supabase.from("products").update({ in_stock: next }).eq("id", product.id);
-                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, in_stock: next } : p));
-                                  }}
-                                />
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center justify-center gap-1">
-                                  <IconBtn title="تعديل" onClick={() => { setEditProduct(product); setShowProductForm(true); }}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                    </svg>
-                                  </IconBtn>
-                                  <IconBtn title="حذف" danger onClick={() => setConfirmDelete({ type: "product", id: product.id, name: product.name_ar })}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-                                    </svg>
-                                  </IconBtn>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      ))}
-                    </table>
-                </div>
-
-                {/* ── Mobile / tablet cards ── */}
-                <div className="md:hidden space-y-5">
-                  {productGroups.map(group => (
-                    <div key={group.catName}>
-                      <div className="flex items-center gap-2 mb-2 px-1">
-                        <span className="text-[12px] font-semibold" style={{ color: "var(--forest)" }}>{group.catName}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--forest-pale)", color: "var(--forest-mid)" }}>{group.products.length}</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {group.products.map(product => (
-                          <div key={product.id} className="rounded-2xl border overflow-hidden"
-                            style={{ background: "#fff", borderColor: "var(--border)" }}>
-                            {/* Image + info */}
-                            <div className="flex items-start gap-3 p-4">
-                              <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
-                                style={{ background: "var(--cream)" }}>
-                                {product.image_url ? (
-                                  <Image src={product.image_url} alt={product.name_ar} width={56} height={56} className="object-contain w-full h-full p-1" />
-                                ) : (
-                                  <span className="text-sm" style={{ color: "var(--text-light)" }}>{product.name_ar.charAt(0)}</span>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-[13px] leading-snug mb-1 line-clamp-2" style={{ color: "var(--text-dark)" }}>
-                                  {product.name_ar}
-                                </p>
-                                {product.price != null && (
-                                  <p className="mt-1.5 font-semibold text-[14px]" style={{ color: "var(--gold)" }}>
-                                    {fmtPrice(product.price)}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            {/* Toggles + actions */}
-                            <div className="px-4 py-2.5 flex items-center justify-between"
-                              style={{ borderTop: "1px solid var(--border)", background: "#f9f8f6" }}>
-                              <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-1.5">
-                                  <Toggle value={product.is_best_seller} onChange={async () => {
-                                    const next = !product.is_best_seller;
-                                    await supabase.from("products").update({ is_best_seller: next }).eq("id", product.id);
-                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_best_seller: next } : p));
-                                  }} />
-                                  <span className="text-[11px]" style={{ color: "var(--text-light)" }}>مميز</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <Toggle value={product.in_stock} onChange={async () => {
-                                    const next = !product.in_stock;
-                                    await supabase.from("products").update({ in_stock: next }).eq("id", product.id);
-                                    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, in_stock: next } : p));
-                                  }} />
-                                  <span className="text-[11px]" style={{ color: "var(--text-light)" }}>متوفر</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <IconBtn title="تعديل" onClick={() => { setEditProduct(product); setShowProductForm(true); }}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                  </svg>
-                                </IconBtn>
-                                <IconBtn title="حذف" danger onClick={() => setConfirmDelete({ type: "product", id: product.id, name: product.name_ar })}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-                                  </svg>
-                                </IconBtn>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                </>
-              )}
-            </div>
-            );
-          })()}
-
-          {/* ════ Categories Tab ════ */}
-          {activeTab === "categories" && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display text-2xl font-semibold" style={{ color: "var(--forest)" }}>
-                  الأقسام
-                </h2>
-                <button
-                  onClick={() => { setEditCategory(null); setShowCategoryForm(true); }}
-                  className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-xl transition-opacity hover:opacity-80"
-                  style={{ background: "var(--forest-bg)", color: "#fff" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path strokeLinecap="round" d="M12 5v14M5 12h14"/></svg>
-                  إضافة قسم
-                </button>
-              </div>
-
-              <>
-              <div className="hidden md:block rounded-2xl border" style={{ borderColor: "var(--border)", overflowX: "auto" }}>
-                <table className="w-full">
-                  <colgroup>
-                    <col style={{ width: "56px" }} />
-                    <col style={{ width: "48px" }} />
-                    <col />
-                    <col style={{ width: "200px" }} />
-                    <col style={{ width: "88px" }} />
-                  </colgroup>
-                  <thead>
-                    <tr style={{ background: "#f9f8f6", borderBottom: "1px solid var(--border)" }}>
-                      {["صورة", "#", "الاسم", "slug", "إجراءات"].map(h => (
-                        <th key={h} className={`px-4 py-3 ${["صورة", "slug", "إجراءات"].includes(h) ? "text-center" : "text-right"}`} style={thStyle}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="text-center" style={{ ...tdStyle }}>
-                          <EmptyState title="لا توجد أقسام" />
-                        </td>
-                      </tr>
-                    ) : categories.map((cat, i) => (
-                      <tr key={cat.id}
-                        style={{
-                          background: i % 2 === 0 ? "#fff" : "#fafaf9",
-                          borderBottom: "1px solid var(--border)",
-                        }}>
-                        <td className="px-4 py-3 text-center">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0 mx-auto"
-                            style={{ background: "var(--cream)" }}>
-                            {cat.image_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={cat.image_url} alt={cat.name_ar} className="object-cover w-full h-full" />
-                            ) : (
-                              <span className="text-xs" style={{ color: "var(--text-light)" }}>{cat.name_ar.charAt(0)}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3" style={{ color: "var(--text-muted)", ...tdStyle }}>{cat.sort_order}</td>
-                        <td className="px-4 py-3 font-medium" style={{ color: "var(--text-dark)", ...tdStyle }}>{cat.name_ar}</td>
-                        <td className="px-4 py-3 font-mono text-center" dir="ltr" style={{ color: "var(--text-light)", ...tdStyle }}>
-                          {cat.slug}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-1">
-                            <IconBtn title="تعديل" onClick={() => { setEditCategory(cat); setShowCategoryForm(true); }}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                              </svg>
-                            </IconBtn>
-                            <IconBtn title="حذف" danger onClick={() => setConfirmDelete({ type: "category", id: cat.id, name: cat.name_ar })}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-                              </svg>
-                            </IconBtn>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* ── Mobile / tablet cards ── */}
-              <div className="md:hidden space-y-2 mt-0">
-                {categories.length === 0 ? (
-                  <EmptyState title="لا توجد أقسام" />
-                ) : categories.map(cat => (
-                  <div key={cat.id} className="rounded-xl border px-4 py-3 flex items-center justify-between"
-                    style={{ background: "#fff", borderColor: "var(--border)" }}>
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0"
-                        style={{ background: "var(--forest-pale)", color: "var(--forest-mid)" }}>
-                        {cat.sort_order}
-                      </span>
-                      <div>
-                        <p className="font-medium text-[13px]" style={{ color: "var(--text-dark)" }}>{cat.name_ar}</p>
-                        <p className="text-[11px] font-mono" dir="ltr" style={{ color: "var(--text-light)" }}>{cat.slug}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <IconBtn title="تعديل" onClick={() => { setEditCategory(cat); setShowCategoryForm(true); }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </IconBtn>
-                      <IconBtn title="حذف" danger onClick={() => setConfirmDelete({ type: "category", id: cat.id, name: cat.name_ar })}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-                        </svg>
-                      </IconBtn>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              </>
-            </div>
-          )}
-
-        </main>
-      </div>
-
-      {/* ── Modals ── */}
-      {showProductForm && (
-        <AdminProductForm
-          product={editProduct}
-          categories={categories}
-          onClose={() => { setShowProductForm(false); setEditProduct(null); }}
-          onSuccess={(saved) => {
-            setProducts(prev => {
-              const exists = prev.some(p => p.id === saved.id);
-              if (exists) return prev.map(p => p.id === saved.id ? saved : p);
-              return [...prev, saved].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-            });
-            setShowProductForm(false);
-            setEditProduct(null);
-            setToast({ message: editProduct ? "تم تعديل المنتج بنجاح" : "تمت إضافة المنتج بنجاح", type: "success" });
-          }}
-        />
-      )}
-      {showCategoryForm && (
-        <CategoryForm
-          category={editCategory}
-          onClose={() => { setShowCategoryForm(false); setEditCategory(null); }}
-          onSuccess={(msg, saved) => {
-            catFetchVer.current++;
-            setCategories(prev => {
-              const exists = prev.some(c => c.id === saved.id);
-              if (exists) return prev.map(c => c.id === saved.id ? saved : c);
-              return [...prev, saved].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-            });
-            setShowCategoryForm(false);
-            setEditCategory(null);
-            setToast({ message: msg, type: "success" });
-          }}
-        />
-      )}
-
-      {/* ── Confirm delete dialog ── */}
-      {confirmDelete && (
-        <ConfirmDialog
-          name={confirmDelete.name}
-          loading={deleteLoading}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setConfirmDelete(null)}
-        />
-      )}
-
-      {/* ── Confirm archive / restore dialog ── */}
       {confirmMove && (
         <ConfirmMoveDialog
           move={confirmMove}
@@ -1875,9 +897,6 @@ export default function AdminPage() {
           onCancel={() => setConfirmMove(null)}
         />
       )}
-
-      {/* ── Toast ── */}
-      {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
     </div>
   );
 }

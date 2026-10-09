@@ -6,25 +6,28 @@ import type { CartItem } from "../_types";
 interface CartCtx {
   items: CartItem[];
   count: number;
-  addItem: (item: Omit<CartItem, "quantity">) => void;
+  addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   removeItem: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
   clearCart: () => void;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
+  /** Increments on every add — CartToast keys off it */
+  addedTick: number;
 }
 
 const CartContext = createContext<CartCtx>({
   items: [], count: 0,
   addItem: () => {}, removeItem: () => {}, updateQty: () => {}, clearCart: () => {},
-  isOpen: false, openCart: () => {}, closeCart: () => {},
+  isOpen: false, openCart: () => {}, closeCart: () => {}, addedTick: 0,
 });
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [addedTick, setAddedTick] = useState(0);
 
   useEffect(() => {
     try {
@@ -38,13 +41,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (hydrated) localStorage.setItem("ruba-cart", JSON.stringify(items));
   }, [items, hydrated]);
 
-  const addItem = (item: Omit<CartItem, "quantity">) => {
+  /* Adding shows a toast (CartToast) — it never opens the drawer */
+  const addItem = (item: Omit<CartItem, "quantity">, qty = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
-      if (existing) return prev.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { ...item, quantity: 1 }];
+      if (existing) return prev.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + qty } : i);
+      return [...prev, { ...item, quantity: qty }];
     });
-    setIsOpen(true);
+    setAddedTick((t) => t + 1);
   };
 
   const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
@@ -61,6 +65,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider value={{
       items, count, addItem, removeItem, updateQty, clearCart,
       isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
+      addedTick,
     }}>
       {children}
     </CartContext.Provider>

@@ -29,7 +29,7 @@ const FEATURES = [
       </svg>
     ),
     title: "توصيل مجاني",
-    subtitle: "للطلبات فوق 50 د.أ",
+    subtitle: "للطلبات فوق 70 د.أ",
   },
   {
     icon: (
